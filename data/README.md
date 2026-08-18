@@ -1,0 +1,1 @@
+Folder przechowujacy surowe i przetworzone dane.

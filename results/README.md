@@ -1,0 +1,1 @@
+Folder przechowujacy wykresy, tabele, logi eksperymentow.

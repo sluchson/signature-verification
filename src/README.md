@@ -1,0 +1,1 @@
+Folder przechowujacy kod: preprocessing, model, trening, ewaluacja, GUI.

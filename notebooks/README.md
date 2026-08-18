@@ -1,0 +1,1 @@
+Folder przechowujacy eksploracje projektu oraz eksperymenty.

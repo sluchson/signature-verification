@@ -1,0 +1,1 @@
+Folder przechowujacy zapisane checkpointy.

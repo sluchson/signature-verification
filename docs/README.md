@@ -1,0 +1,1 @@
+Folder przechowujacy Dziennik decyzji, lista literatury, notatki do rozdzialow.
