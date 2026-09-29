@@ -1,0 +1,139 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Praca inżynierska -- Maciej Pereślucha
+%%% Oparta na szablonie pracy dyplomowej WEII PRz (styczeń 2024)
+%%% Oryginał szablonu z instrukcjami formatowania:
+%%% https://github.com/przemarbor/szablon_pracy_dyplomowej_weii
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[12pt, twoside, openright]{article}
+
+\usepackage{weiiszablon}
+
+\author{Maciej Pereślucha}
+\studentID{EF-177139}
+
+\title{Zastosowanie algorytmów sztucznej inteligencji do rozpoznawania autentyczności podpisu}
+\titleEN{Application of Artificial Intelligence Algorithms for Signature Authenticity Recognition}
+
+% 1 = inżynierska, 2 = magisterska, 3 = doktorska
+\newcommand{\rodzajPracyNo}{1}
+
+\supervisor{dr inż. Paweł Górka}
+\supervisorEN{Paweł Górka, PhD, Eng.}
+
+% TODO: uzupełnić na końcu pisania pracy
+\abstract{Treść streszczenia po polsku}
+\abstractEN{Treść streszczenia po angielsku}
+\keywords{max. 5 słów kluczowych w 2 wierszach, oddzielanych przecinkami}
+\keywordsEN{max. five keywords in English}
+
+
+\begin{document}
+
+\maketitle
+\cleardoublepage
+
+\tableofcontents
+\cleardoublepage
+
+
+% TODO: odkomentować, gdy w tekście pojawią się skróty/symbole (np. CNN, EER, FAR, FRR)
+% \section*{Wykaz symboli, oznaczeń i skrótów}
+% \addcontentsline{toc}{section}{Wykaz symboli, oznaczeń i skrótów}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Wprowadzenie}
+\label{Sec:wprowadzenie}
+
+Podpis odręczny jest jednym z~najczęściej używanych sposobów potwierdzania tożsamości, na przykład w~bankach, u~notariusza czy w~urzędach.
+Sprawdzaniem, czy podpis jest prawdziwy, zajmują się zwykle biegli grafolodzy, jednak taka ocena zajmuje dużo czasu i~w~pewnym stopniu zależy od doświadczenia osoby, która ją wykonuje.
+Automatyczna weryfikacja podpisu jest badana od kilkudziesięciu lat, ale nadal pozostaje problemem otwartym \cite{hafemann2017review}.
+Rozwój uczenia głębokiego sprawił, że sieci neuronowe potrafią same nauczyć się cech, po których można odróżnić podpisy różnych osób, bez ręcznego projektowania tych cech.
+
+Najprostszym pomysłem byłoby nauczenie sieci rozpoznawania podpisów każdej osoby osobno, tak jak w~zwykłym zadaniu klasyfikacji.
+Takie podejście ma jednak dwie wady.
+Po pierwsze, od jednej osoby dostępnych jest zwykle niewiele podpisów --- w~zbiorze użytym w~tej pracy są to 24 podpisy na osobę.
+Po drugie, dodanie do systemu każdej nowej osoby wymagałoby ponownego trenowania modelu.
+Rozwiązaniem jest sieć syjamska, która składa się z~dwóch jednakowych podsieci i~zamiast odpowiadać na pytanie, do kogo należy podpis, porównuje ze sobą dwa podpisy i~mierzy, jak bardzo są do siebie podobne \cite{bromley1993}.
+Dzięki temu sieć może być stosowana także do osób, których podpisów nie widziała podczas treningu \cite{dey2017}.
+
+W~pracy wykorzystano podpisy w~postaci zeskanowanych obrazów.
+Taki wariant nazywa się weryfikacją statyczną (ang. \textit{offline}), w~odróżnieniu od weryfikacji dynamicznej (ang. \textit{online}), w~której podpis składany jest na tablecie rejestrującym na przykład prędkość ruchu pióra.
+Na obrazie tych informacji nie ma, widoczny jest tylko kształt podpisu.
+Najtrudniejsze do wykrycia są fałszerstwa wykwalifikowane, czyli podpisy podrobione przez osobę, która wcześniej ćwiczyła naśladowanie oryginału.
+Wstępna analiza danych wykonana w~ramach pracy pokazała, że proste porównanie obrazów piksel po pikselu daje dla takich fałszerstw praktycznie ten sam wynik co dla dwóch prawdziwych podpisów tej samej osoby, dlatego potrzebna jest bardziej zaawansowana metoda.
+
+Celem pracy było opracowanie systemu, który na podstawie zeskanowanego obrazu sprawdza, czy podpis jest autentyczny, oraz ocena jego skuteczności.
+System oparto na sieci syjamskiej i~zaprojektowano tak, aby działał również dla osób, których podpisy nie były używane podczas treningu.
+Zakres pracy obejmował:
+\begin{itemize}[label={--},leftmargin=1.25cm]
+	\item przegląd literatury dotyczącej weryfikacji podpisu i~sieci syjamskich,
+	\item analizę zbioru podpisów CEDAR,
+	\item przygotowanie danych, w~tym podział osób na osobne zbiory treningowy, walidacyjny i~testowy oraz utworzenie par podpisów,
+	\item implementację sieci syjamskiej w~języku Python,
+	\item trening sieci i~ocenę jej skuteczności na zbiorze testowym,
+	\item analizę otrzymanych wyników.
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Tytuły rozdziałów 2--6 są robocze -- do uzgodnienia z promotorem
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Metody weryfikacji podpisu -- przegląd literatury}
+\label{Sec:literatura}
+
+% TODO: problem weryfikacji (online/offline, rodzaje fałszerstw), sieci syjamskie,
+% funkcja straty kontrastowej, SigNet, miary oceny (FAR, FRR, EER)
+
+
+\section{Zbiór danych i jego przygotowanie}
+\label{Sec:dane}
+
+\subsection{Zbiór CEDAR}
+\label{Subsec:cedar}
+
+\subsection{Analiza eksploracyjna danych}
+\label{Subsec:eksploracja}
+
+\subsection{Podział na zbiory niezależne od autora}
+\label{Subsec:podzial}
+
+\subsection{Budowa par podpisów}
+\label{Subsec:pary}
+
+
+\section{Model sieci syjamskiej}
+\label{Sec:model}
+
+
+\section{Badania eksperymentalne i wyniki}
+\label{Sec:wyniki}
+
+
+\section{Podsumowanie i wnioski końcowe}
+\label{Sec:podsumowanie}
+
+% TODO: ostatni akapit musi zaczynać się od: ,,Autor za własny wkład pracy uważa: \ldots''
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO: odkomentować, jeśli będą załączniki (np. instrukcja uruchomienia kodu)
+% \section*{Załączniki}
+% \addcontentsline{toc}{section}{Załączniki}
+
+
+\clearpage
+\addcontentsline{toc}{section}{Literatura}
+
+% Kolejność pozycji = kolejność pierwszego \cite w tekście
+\begin{thebibliography}{9}
+\bibitem{hafemann2017review} Hafemann L.G., Sabourin R., Oliveira L.S.: Offline Handwritten Signature Verification --- Literature Review. 7th International Conference on Image Processing Theory, Tools and Applications (IPTA), 2017.
+\bibitem{bromley1993} Bromley J., Guyon I., LeCun Y., Säckinger E., Shah R.: Signature Verification using a ,,Siamese'' Time Delay Neural Network. Advances in Neural Information Processing Systems 6 (NIPS 1993), str. 737--744.
+\bibitem{dey2017} Dey S., Dutta A., Toledo J.I., Ghosh S.K., Lladós J., Pal U.: SigNet: Convolutional Siamese Network for Writer Independent Offline Signature Verification. arXiv:1707.02131, 2017.
+\end{thebibliography}
+
+\clearpage
+\makesummary
+
+\end{document}
