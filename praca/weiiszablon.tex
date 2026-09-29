@@ -93,6 +93,45 @@ Zakres pracy obejmował:
 \subsection{Zbiór CEDAR}
 \label{Subsec:cedar}
 
+Do trenowania i~testowania modelu wykorzystano zbiór podpisów CEDAR, udostępniany przez ośrodek Center of Excellence for Document Analysis and Recognition Uniwersytetu w~Buffalo \cite{kalera2004}.
+Zbiór zawiera podpisy 55 osób o~różnym pochodzeniu i~wykonujących różne zawody.
+Każda z~tych osób złożyła 24 podpisy prawdziwe.
+Fałszerstwa wykonały inne osoby, z~których każda podrabiała podpisy trzech osób, po osiem razy każdy.
+Dzięki temu dla każdej osoby w~zbiorze dostępne są 24 fałszerstwa wykwalifikowane \cite{dey2017}.
+Podstawowe parametry zbioru zestawiono w~tabeli \ref{Tab:cedar}.
+
+\begin{table}[ht]
+\caption{Podstawowe parametry zbioru CEDAR}
+\centering
+	\begin{tabular}{|l|c|}
+		\hline
+		Parametr & Wartość \\
+		\hline
+		liczba osób & 55 \\
+		podpisy prawdziwe na osobę & 24 \\
+		fałszerstwa wykwalifikowane na osobę & 24 \\
+		podpisy prawdziwe łącznie & 1320 \\
+		fałszerstwa łącznie & 1320 \\
+		wszystkie obrazy & 2640 \\
+		\hline
+	\end{tabular}
+\label{Tab:cedar}
+\end{table}
+
+Zbiór CEDAR jest często wykorzystywany w~pracach dotyczących weryfikacji podpisu, między innymi w~\cite{dey2017,hafemann2017features}, dzięki czemu wyniki uzyskane w~niniejszej pracy można porównać z~wynikami innych autorów.
+
+W~pracy użyto kopii zbioru udostępnionej w~serwisie Kaggle \cite{cedarkaggle}.
+Obrazy podzielone są na dwa katalogi: \texttt{full\_org} z~podpisami prawdziwymi oraz \texttt{full\_forg} z~fałszerstwami.
+Nazwa pliku zawiera numer osoby i~numer podpisu, na przykład \texttt{original\_1\_5.png} to piąty prawdziwy podpis osoby nr~1, a~\texttt{forgeries\_1\_5.png} to piąte fałszerstwo jej podpisu.
+Na rys. \ref{Fig:cedar_przyklad} przedstawiono przykładowe podpisy jednej osoby ze zbioru.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=\textwidth]{figures/cedar_przyklad.png}
+	\caption{Przykładowe podpisy jednej osoby ze zbioru CEDAR: dwa podpisy prawdziwe (a, b) i~fałszerstwo wykwalifikowane (c)}
+	\label{Fig:cedar_przyklad}
+\end{figure}
+
 \subsection{Analiza eksploracyjna danych}
 \label{Subsec:eksploracja}
 
@@ -131,6 +170,9 @@ Zakres pracy obejmował:
 \bibitem{hafemann2017review} Hafemann L.G., Sabourin R., Oliveira L.S.: Offline Handwritten Signature Verification --- Literature Review. 7th International Conference on Image Processing Theory, Tools and Applications (IPTA), 2017.
 \bibitem{bromley1993} Bromley J., Guyon I., LeCun Y., Säckinger E., Shah R.: Signature Verification using a ,,Siamese'' Time Delay Neural Network. Advances in Neural Information Processing Systems 6 (NIPS 1993), str. 737--744.
 \bibitem{dey2017} Dey S., Dutta A., Toledo J.I., Ghosh S.K., Lladós J., Pal U.: SigNet: Convolutional Siamese Network for Writer Independent Offline Signature Verification. arXiv:1707.02131, 2017.
+\bibitem{kalera2004} Kalera M.K., Srihari S.N., Xu A.: Offline Signature Verification and Identification Using Distance Statistics. International Journal of Pattern Recognition and Artificial Intelligence, vol.~18, nr~7, 2004, str. 1339--1360.\bibitem{hafemann2017features} Hafemann L.G., Sabourin R., Oliveira L.S.: Learning Features for Offline Handwritten Signature Verification using Deep Convolutional Neural Networks. Pattern Recognition, vol.~70, 2017, str. 163--176.
+\bibitem{cedarkaggle} CEDAR Signature Dataset, \url{https://www.kaggle.com/datasets/shreelakshmigp/cedardataset}. Dostęp 29.09.2026.
+
 \end{thebibliography}
 
 \clearpage

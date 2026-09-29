@@ -75,6 +75,8 @@
 - rozdz. 3.3 i tab. 3: CEDAR podzielony 50 osób trening / 5 test (u mnie 35/10/10)
 - wyniki na CEDAR do porównania w rozdz. 5
 - najbardziej podobna praca do mojej (sieć syjamska, CNN, contrastive loss, CEDAR)
+- rozdz. 3.1.1: opis zbioru CEDAR, cytowane w rozdz. 3.1
+- rozdz. 2.1: obrazy skalowane do 155×220, odwrócone kolory
 
 ### Hafemann, Sabourin, Oliveira 2017 — Learning Features for Offline Handwritten Signature Verification using Deep CNNs
 - nieprzeczytane
@@ -83,14 +85,16 @@
 - abstrakt: na obrazie podpisu nie ma informacji o ruchu pióra
 - używa CEDAR (55 osób, po 24 oryginały i 24 fałszerstwa)
 - inne podejście niż sieć syjamska (uczenie cech przez CNN), do rozdz. 2
+- tabela 3: CEDAR wśród używanych zbiorów, cytowane w rozdz. 3.1
+- rozdz. 3.3: przygotowanie obrazów (środek masy, OTSU, odwrócenie kolorów)
 
 ## Zbiór danych (rozdz. 3)
 
 ### Kalera, Srihari, Xu 2004 — Offline Signature Verification and Identification Using Distance Statistics
 - nieprzeczytane
 - Int. Journal of Pattern Recognition and Artificial Intelligence, DOI 10.1142/S0218001404003630
-- vol. 18, nr 7, str. 1339–1360 do sprawdzenia
-- PDF płatny, spróbować przez bibliotekę PRz albo ResearchGate
+- vol. 18, nr 7 (listopad 2004), str. 1339–1360, potwierdzone w CV Srihariego i w bibliografii Hafemann i in. 2017
+- 29.09.2026: wysłana prośba o pełny tekst na ResearchGate
 - źródło zbioru CEDAR, cytować w rozdz. 3.1 przy opisie zbioru
 
 ## Podstawy uczenia głębokiego (rozdz. 2, 4)
@@ -115,3 +119,4 @@
 ## Do znalezienia
 - coś o BHSig260, jeśli użyję go jako drugiego zbioru
 - artykuł o tym, że złe dzielenie osób daje zawyżone wyniki na CEDAR, do rozdz. 5
+- czy ktoś w literaturze opisał różnicę tła między prawdziwymi podpisami a fałszerstwami w CEDAR

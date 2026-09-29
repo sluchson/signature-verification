@@ -54,22 +54,25 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - różne tryby kolorów: `full_org` RGBA i L, `full_forg` P i RGBA
 - sieć potrzebuje tego samego rozmiaru i tej samej liczby kanałów
 - kolor nic nie mówi o kształcie podpisu, jeden kanał wystarczy
-- notebook `02_eksploracja_danych.ipynb`
+- notebook `01_eksploracja_danych.ipynb`
 
 ## Wrzesień 2026 — Proporcje wejścia sieci
 - wejście ma być prostokątem szerszym niż wyższym, nie kwadratem
 - mediana rozmiaru 576×349 px, proporcja ok. 1,65:1, tak samo w `full_org` i `full_forg`
 - szerokości od 264 do 888 px, więc trochę zniekształcenia i tak będzie
 - np. ok. 220×140 zamiast 128×128, dokładny rozmiar w rozdz. 4
-- sprawdzić, do jakiego rozmiaru skalują obrazy w SigNet
-- notebook `02_eksploracja_danych.ipynb`
+- SigNet skaluje wszystkie obrazy do 155×220 (wys. × szer.), proporcja ok. 1,42:1, czyli też prostokąt
+- notebook `01_eksploracja_danych.ipynb`
 
 ## Wrzesień 2026 — Przycinanie do samego podpisu
 - przed zmianą rozmiaru przycinam obraz do prostokąta z samym podpisem (bounding box)
 - podpis zajmuje średnio ok. 60% obrazu (60,1% w `full_org`, 58,6% w `full_forg`), reszta to tło
 - bez przycięcia duża część małego wejścia sieci to byłoby puste tło
-- sprawdzić, czy w SigNet albo u Hafemanna też tak robią, jeśli tak, dopisać źródło
-- notebook `02_eksploracja_danych.ipynb`
+- SigNet nie przycina, skaluje cały obraz do 155×220 (rozdz. 2.1)
+- Hafemann i in. 2017 też nie przycinają: wyśrodkowują podpis na dużym tle według środka masy i dopiero skalują (rozdz. 3.3)
+- czyli przycinanie to mój własny wybór, w rozdz. 4 porównać wyniki z przycinaniem i bez
+- oba artykuły odwracają kolory (tło = 0, podpis jasny), rozważyć to samo
+- notebook `01_eksploracja_danych.ipynb`
 
 ## Wrzesień 2026 — Rozmiar obrazu zdradza autora, prosty test porównawczy
 - 85,4% rozmiarów w `full_org` i 78,1% w `full_forg` występuje tylko u jednej osoby
@@ -79,7 +82,7 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - prawdziwy–prawdziwy: 0,146, prawdziwy–podrobiony: 0,146, prawdziwy–inna osoba: 0,081
 - taka metoda nie odróżnia dobrego fałszerstwa od oryginału, więc potrzebne jest uczenie głębokie
 - pliki sprawdzone (MD5 + `PIL.Image.verify()`): brak uszkodzeń i duplikatów
-- notebook `02_eksploracja_danych.ipynb`
+- notebook `01_eksploracja_danych.ipynb`
 
 ## Wrzesień 2026 — Podział osób i pary losowe
 - 55 osób: 35 trening, 10 walidacja, 10 test
@@ -89,7 +92,7 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - pary losowe tylko w obrębie tej samej grupy, żeby nie przemycić osób testowych do treningu
 - 24 pary losowe na osobę, bo tyle samo jest par z fałszerstwami wykwalifikowanymi
 - stałe seedy, więc za każdym razem wychodzi to samo
-- notebook `02_eksploracja_danych.ipynb`
+- notebook `01_eksploracja_danych.ipynb`
 
 ## Wrzesień 2026 — Pliki z parami do treningu
 - trzy pliki CSV: `genuine_pairs.csv`, `skilled_forgery_pairs.csv`, `random_forgery_pairs.csv`
@@ -98,4 +101,16 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - klasy po równo 1:1
 - kolumna `split` pilnuje podziału na trening / walidację / test
 - w rozdz. 4 łączę je i wczytuję do `Dataset` w PyTorch
-- notebook `02_eksploracja_danych.ipynb`
+- notebook `01_eksploracja_danych.ipynb`
+
+---
+
+## Wrzesień 2026 — Tło zdradza, co jest fałszerstwem
+- mediana jasności tła: `full_org` 234–245 (średnio 239,8), `full_forg` 249–255 (średnio 253,5)
+- zakresy się nie nakładają, 513 z 1320 fałszerstw ma tło idealnie białe, prawdziwe żadne
+- jeden próg (ok. 247) oddziela wszystkie prawdziwe podpisy od fałszerstw bez patrzenia na podpis
+- bez poprawki sieć mogłaby rozpoznawać fałszerstwa wykwalifikowane po tle, a nie po kształcie
+- nie binaryzuję, więc różnica w tle trafiłaby do sieci
+- decyzja: usunięcie tła metodą Otsu, tło = 255, atrament zostaje w skali szarości (jak Hafemann i in. 2017, rozdz. 3.3)
+- po przetworzeniu powtórzyć test `background_level` i sprawdzić, czy różnica zniknęła
+- notebook `01_eksploracja_danych.ipynb`
