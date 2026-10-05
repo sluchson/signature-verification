@@ -128,3 +128,55 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - test korelacji pikseli policzony ponownie
 - notebook `01_eksploracja_danych.ipynb`
 
+## Październik 2026 — Przygotowanie obrazów (`src/preprocessing.py`)
+- kolejność: skala szarości → usunięcie tła metodą Otsu (tło = 255, atrament w skali szarości) → przycięcie do podpisu → ujednolicenie ciemności atramentu → dopasowanie do 128×256 bez rozciągania (białe dopełnienie)
+- po Otsu mediana obrazu = 255 we wszystkich 2640 obrazach, różnica tła zniknęła
+- progi Otsu: prawdziwe 170–210, fałszerstwa 174–226, nakładają się
+- proporcja po przycięciu: mediana ok. 2,1; skrajne 0,63 (osoba 27) i 10,57 (osoba 52) to prawdziwe kształty podpisów, dlatego bez rozciągania
+- rozmiar 128×256, bo proporcja 2:1 jest blisko mediany 2,1
+- notebook `02_przygotowanie_obrazow.ipynb`
+
+## Październik 2026 — Atrament zdradza fałszerstwo
+- przed poprawką: EER po samej jasności atramentu 21,1% (mediana różnicy w parze: 3 prawdziwy–prawdziwy, 18 prawdziwy–fałszerstwo)
+- przyczyna: prawdziwe podpisy jednej osoby tym samym długopisem i w jednej sesji, fałszerstwa innym długopisem
+- poprawka: ciemność kresek przeskalowana tak, żeby jej mediana była taka sama w każdym obrazie (bez binaryzacji)
+- po poprawce EER 35,9%: dużo słabiej, ale nie 50%; przypuszczalnie zostaje grubość kresek (inny długopis)
+- opisać jako ograniczenie; po treningu ewentualnie porównać z wariantem ze zbinaryzowanymi kreskami
+- metoda bazowa na przetworzonych obrazach: 42,1% dla fałszerstw (było 38,0%), 31,6% dla różnych osób (było 32,3%)
+- czyli część starego wyniku dla fałszerstw pochodziła z tła i atramentu, a nie z kształtu
+
+## Październik 2026 — Plan eksperymentów
+- najpierw jeden trening na obecnym procesie, jako punkt odniesienia
+- potem zawsze jedna zmiana naraz, ten sam seed, wyniki do CSV
+- kolejność eksperymentów:
+  - bez usuwania tła i bez normalizacji atramentu (ile zawyżają sztuczne wskazówki)
+  - przycinanie vs cały obraz (SigNet) vs środek masy na dużym tle (Hafemann)
+  - nowe pary w każdej epoce (teraz w treningu jest tylko część fałszerstw)
+  - augmentacja (obrót, przesunięcie, skala, grubość kresek)
+  - trening bez fałszerstw wykwalifikowanych, test na nich
+  - rozmiar wejścia (64×128, 128×256, 256×512)
+- na końcu walidacja krzyżowa po osobach (np. 5 × 11 osób) dla najlepszego wariantu, wynik jako średnia ± odchylenie
+- do `preprocess()` dodać parametry do włączania i wyłączania kroków
+
+## Październik 2026 — Pierwszy trening (punkt odniesienia)
+- sieć: 4 bloki splotowe (32-64-128-128), uśrednianie do siatki 2×4, dropout 0,3, wektor cech 128 znormalizowany
+- strata kontrastowa, margines 1,0, etykieta 1 = ta sama osoba (u Hadsella odwrotnie)
+- Adam, lr 1e-3, weight decay 1e-4, batch 32, 30 epok, seed 42
+- najlepsza epoka 9 (EER walidacja 20,2%); strata walidacyjna najniższa w epoce 4, potem rośnie, czyli przeuczenie
+- EER walidacji skacze między epokami (20–32%), bo walidacja to tylko 10 osób; wybór najlepszej epoki jest przez to trochę zawyżony
+- test, fałszerstwa wykwalifikowane: EER 28,7% (metoda bazowa 45,7%)
+- test, fałszerstwa losowe: EER 15,4% (metoda bazowa 30,8%)
+- próg z walidacji na wszystkich parach (odległość 0,515): wykwalifikowane FAR 40,0% / FRR 15,6%, losowe FAR 15,0% / FRR 15,6%
+- próg ustalony na mieszance par jest za łagodny dla fałszerstw wykwalifikowanych, dlatego od teraz próg wybieram na walidacji z samymi fałszerstwami wykwalifikowanymi
+- notebook `03_trening.ipynb`
+
+## Październik 2026 — Eksperyment: stałe pary vs nowe pary co epokę
+- `src/train.py`: funkcja `run_experiment`, wyniki zapisywane do `results/experiments.csv`
+- każdy wariant 3 razy (seed 1, 2, 3), próg wybierany na walidacji z fałszerstwami wykwalifikowanymi
+- stałe pary: EER wykwalifikowane 23,7% ± 3,8, losowe 16,5% ± 2,8
+- nowe pary: EER wykwalifikowane 24,6% ± 3,0, losowe 16,1% ± 1,4
+- różnica mniejsza niż rozrzut między seedami, więc nowe pary nie dają pewnej poprawy
+- wcześniejsza „poprawa” o 3,3 pkt z jednego treningu była przypadkiem, dlatego każdy wariant trenuję na kilku seedach
+- rozrzut między seedami duży (wykwalifikowane od 18,8% do 28,6%)
+- najlepsze epoki od 2 do 11, 30 epok to za dużo; 6 treningów = 33 min
+- notebook `04_eksperymenty.ipynb`
