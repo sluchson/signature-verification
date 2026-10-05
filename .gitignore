@@ -5,6 +5,8 @@ __pycache__/
 
 data/*
 !data/README.md
+!data/writer_split.json
+!data/*_pairs.csv
 
 models/*
 !models/README.md

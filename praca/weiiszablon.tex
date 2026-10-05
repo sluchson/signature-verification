@@ -49,8 +49,8 @@
 
 Podpis odręczny jest jednym z~najczęściej używanych sposobów potwierdzania tożsamości, na przykład w~bankach, u~notariusza czy w~urzędach.
 Sprawdzaniem, czy podpis jest prawdziwy, zajmują się zwykle biegli grafolodzy, jednak taka ocena zajmuje dużo czasu i~w~pewnym stopniu zależy od doświadczenia osoby, która ją wykonuje.
-Automatyczna weryfikacja podpisu jest badana od kilkudziesięciu lat, ale nadal pozostaje problemem otwartym \cite{hafemann2017review}.
-Rozwój uczenia głębokiego sprawił, że sieci neuronowe potrafią same nauczyć się cech, po których można odróżnić podpisy różnych osób, bez ręcznego projektowania tych cech.
+Automatyczna weryfikacja podpisu jest badana od kilkudziesięciu lat, ale nadal pozostaje problemem otwartym.
+Rozwój uczenia głębokiego sprawił, że sieci neuronowe potrafią same nauczyć się cech, po których można odróżnić podpisy różnych osób, bez ręcznego projektowania tych cech \cite{hafemann2017review}.
 
 Najprostszym pomysłem byłoby nauczenie sieci rozpoznawania podpisów każdej osoby osobno, tak jak w~zwykłym zadaniu klasyfikacji.
 Takie podejście ma jednak dwie wady.
@@ -63,7 +63,7 @@ W~pracy wykorzystano podpisy w~postaci zeskanowanych obrazów.
 Taki wariant nazywa się weryfikacją statyczną (ang. \textit{offline}), w~odróżnieniu od weryfikacji dynamicznej (ang. \textit{online}), w~której podpis składany jest na tablecie rejestrującym na przykład prędkość ruchu pióra.
 Na obrazie tych informacji nie ma, widoczny jest tylko kształt podpisu.
 Najtrudniejsze do wykrycia są fałszerstwa wykwalifikowane, czyli podpisy podrobione przez osobę, która wcześniej ćwiczyła naśladowanie oryginału \cite{kalera2004}.
-Wstępna analiza danych wykonana w~ramach pracy pokazała, że proste porównanie obrazów piksel po pikselu daje dla takich fałszerstw praktycznie ten sam wynik co dla dwóch prawdziwych podpisów tej samej osoby, dlatego potrzebna jest bardziej zaawansowana metoda.
+Wstępna analiza danych wykonana w~ramach pracy pokazała, że proste porównanie obrazów piksel po pikselu myli się w~ponad jednej trzeciej przypadków, dlatego potrzebna jest bardziej zaawansowana metoda.
 
 Celem pracy było opracowanie systemu, który na podstawie zeskanowanego obrazu sprawdza, czy podpis jest autentyczny, oraz ocena jego skuteczności.
 System oparto na sieci syjamskiej i~zaprojektowano tak, aby działał również dla osób, których podpisy nie były używane podczas treningu.
@@ -152,14 +152,14 @@ Kolor nie niesie informacji o~kształcie podpisu, dlatego wszystkie obrazy przy 
 
 Obrazy w~zbiorze nie mają wspólnego rozmiaru.
 Wśród 1320 podpisów prawdziwych występuje 1095 różnych rozmiarów, a~wśród fałszerstw 1006.
-Mediana rozmiaru wynosi 576~$\times$~349 pikseli (szerokość $\times$ wysokość), a~szerokość obrazów waha się od 264 do 888 pikseli.
+Mediana rozmiaru wynosi 577~$\times$~349 pikseli dla podpisów prawdziwych i~576~$\times$~336 pikseli dla fałszerstw (szerokość $\times$ wysokość), a~szerokość obrazów waha się od 264 do 888 pikseli.
 Sieć wymaga obrazów o~jednakowym rozmiarze, dlatego wszystkie obrazy trzeba przeskalować.
-Ponieważ podpisy są wyraźnie szersze niż wyższe (proporcja około 1,65:1), wejście sieci powinno mieć kształt prostokąta, a~nie kwadratu.
+Ponieważ podpisy są wyraźnie szersze niż wyższe (proporcja około 1,7:1), wejście sieci powinno mieć kształt prostokąta, a~nie kwadratu.
 Okazało się również, że rozmiar obrazu niemal jednoznacznie wskazuje osobę, do której należy podpis: 85,4\% rozmiarów występujących wśród podpisów prawdziwych i~78,1\% wśród fałszerstw pojawia się tylko u~jednej osoby.
 Gdyby obrazy nie zostały ujednolicone, sieć mogłaby nauczyć się rozpoznawać osobę po rozmiarze obrazu, a~nie po kształcie podpisu.
 
-Sam podpis zajmuje średnio około 60\% powierzchni obrazu (60,1\% dla podpisów prawdziwych i~58,6\% dla fałszerstw), a~resztę stanowi puste tło.
-Wartości te obliczono jako stosunek pola prostokąta obejmującego podpis do pola całego obrazu, przy czym za piksele podpisu uznano piksele o~jasności mniejszej niż 200.
+Prostokąt obejmujący podpis zajmuje średnio około 60\% powierzchni obrazu (60,1\% dla podpisów prawdziwych i~58,6\% dla fałszerstw), a~resztę stanowi puste tło.
+Za piksele podpisu uznano piksele o~jasności mniejszej niż 200.
 Przeskalowanie całego obrazu do niewielkiego wejścia sieci oznaczałoby, że znaczna jego część przypadałaby na tło, dlatego przed skalowaniem obrazy przycinane są do prostokąta zawierającego podpis.
 
 Najważniejszym wynikiem analizy okazała się różnica w~jasności tła między podpisami prawdziwymi a~fałszerstwami.
@@ -180,15 +180,90 @@ Na podstawie dostępnych informacji nie da się ustalić, czy różnica ta pocho
 Sposób jej usunięcia opisano w~rozdziale~\ref{Sec:model}.
 
 Na koniec sprawdzono, czy do odróżniania podpisów wystarczy proste porównanie obrazów.
-Obrazy przeskalowano do rozmiaru 128~$\times$~128 pikseli i~dla par obrazów obliczono współczynnik korelacji Pearsona między wartościami pikseli.
-Średnia korelacja dla par dwóch podpisów prawdziwych tej samej osoby wyniosła 0,146, dla par złożonych z~podpisu prawdziwego i~fałszerstwa tej samej osoby również 0,146, a~dla par podpisów dwóch różnych osób 0,081.
-Taka metoda odróżnia więc podpisy różnych osób, ale nie odróżnia fałszerstw wykwalifikowanych od podpisów prawdziwych, co uzasadnia zastosowanie sieci neuronowej.
+Obrazy przeskalowano do rozmiaru 128~$\times$~128 pikseli i~dla wszystkich par opisanych w~podrozdziale \ref{Subsec:pary} obliczono współczynnik korelacji Pearsona między wartościami pikseli.
+Średnia korelacja wyniosła 0,158 (odchylenie standardowe 0,090) dla par dwóch podpisów prawdziwych tej samej osoby, 0,104 (0,069) dla par z~fałszerstwem wykwalifikowanym oraz 0,083 (0,061) dla par podpisów dwóch różnych osób.
+Rozkłady te w~dużym stopniu się nakładają.
+Korelację potraktowano jako miarę podobieństwa i~wybrano próg, przy którym odsetek błędnie odrzuconych par prawdziwych jest równy odsetkowi błędnie zaakceptowanych par fałszywych.
+Błąd w~tym punkcie, nazywany równym współczynnikiem błędów (ang. \textit{equal error rate}, EER), wyniósł 38,0\% dla fałszerstw wykwalifikowanych i~32,3\% dla fałszerstw losowych.
+Prosta metoda myli się więc w~ponad jednej trzeciej przypadków, co uzasadnia zastosowanie sieci neuronowej.
+Wynik ten posłuży również jako punkt odniesienia przy ocenie sieci w~rozdziale~\ref{Sec:wyniki}.
 
 \subsection{Podział na zbiory niezależne od autora}
 \label{Subsec:podzial}
 
+W~weryfikacji podpisu wyróżnia się dwa podejścia.
+W~podejściu zależnym od autora (ang. \textit{writer-dependent}) dla każdej osoby trenuje się osobny model, natomiast w~podejściu niezależnym od autora (ang. \textit{writer-independent}) jeden model służy do weryfikacji podpisów dowolnych osób \cite{hafemann2017review}.
+W~drugim przypadku osoby dzieli się na rozłączne zbiory treningowy i~testowy, dzięki czemu system nie wymaga ponownego trenowania po dodaniu nowej osoby \cite{dey2017}.
+
+W~niniejszej pracy zastosowano podejście niezależne od autora.
+Osoby ze zbioru CEDAR podzielono losowo na trzy rozłączne grupy: 35 osób do zbioru treningowego, 10 do walidacyjnego i~10 do testowego.
+Liczbę podpisów w~każdym ze zbiorów przedstawiono w~tabeli \ref{Tab:podzial}.
+
+\begin{table}[ht]
+\caption{Podział zbioru CEDAR na zbiory treningowy, walidacyjny i~testowy}
+\centering
+	\begin{tabular}{|l|c|c|c|}
+		\hline
+		Zbiór & Liczba osób & Podpisy prawdziwe & Fałszerstwa \\
+		\hline
+		treningowy & 35 & 840 & 840 \\
+		walidacyjny & 10 & 240 & 240 \\
+		testowy & 10 & 240 & 240 \\
+		\hline
+		razem & 55 & 1320 & 1320 \\
+		\hline
+	\end{tabular}
+\label{Tab:podzial}
+\end{table}
+
+Zbiór treningowy służy do uczenia sieci, zbiór walidacyjny do wyboru progu decyzyjnego i~porównywania wariantów modelu, a~zbiór testowy wyłącznie do końcowej oceny.
+Żadna osoba nie występuje w~więcej niż jednym zbiorze, więc wynik na zbiorze testowym pokazuje, jak model radzi sobie z~podpisami osób, których wcześniej nie widział.
+Losowanie wykonano z~ustalonym ziarnem generatora liczb losowych (ang. \textit{seed}), a~wynik podziału zapisano w~pliku, dzięki czemu podział jest za każdym razem taki sam i~wszystkie eksperymenty korzystają z~tych samych grup osób.
+
+W~literaturze stosowane są różne sposoby podziału zbioru CEDAR.
+Na przykład w~pracy \cite{dey2017} do treningu użyto 50 osób, a~do testu 5.
+Z~kolei w~pracy \cite{kalera2004} podzielono podpisy, a~nie osoby: 16 podpisów każdej osoby użyto do treningu, a~8 do testu, więc te same osoby występowały w~obu zbiorach.
+Wyniki uzyskane przy różnych sposobach podziału nie są więc bezpośrednio porównywalne, co uwzględniono przy analizie wyników w~rozdziale~\ref{Sec:wyniki}.
+
 \subsection{Budowa par podpisów}
 \label{Subsec:pary}
+
+Sieć syjamska uczy się na parach podpisów, z~których każda jest oznaczona jako para pozytywna (oba podpisy prawdziwe i~należące do tej samej osoby) albo para negatywna.
+Pary zbudowano osobno w~każdym ze zbiorów opisanych w~podrozdziale \ref{Subsec:podzial}, tak aby oba podpisy w~parze zawsze pochodziły od osób z~tego samego zbioru.
+Wykorzystano trzy rodzaje par.
+
+Pary pozytywne utworzono z~podpisów prawdziwych jednej osoby.
+Z~24 podpisów można utworzyć 276 różnych par, z~których dla każdej osoby wylosowano 48.
+Pary negatywne z~fałszerstwami wykwalifikowanymi utworzono, łącząc podpis prawdziwy osoby z~fałszerstwem jej podpisu.
+Spośród 576 możliwych połączeń (24~$\times$~24) dla każdej osoby wylosowano 24 pary.
+Pary negatywne z~fałszerstwami losowymi utworzono, łącząc każdy z~24 podpisów prawdziwych osoby z~losowo wybranym podpisem prawdziwym innej osoby z~tego samego zbioru.
+Taki sposób symulowania fałszerstw losowych, w~którym rolę fałszerstwa pełni prawdziwy podpis innej osoby, zastosowano już w~pracy, w~której zaproponowano sieci syjamskie \cite{bromley1993}.
+W~pracy nie uwzględniono fałszerstw prostych, w~których fałszerz zna jedynie imię i~nazwisko osoby i~podpisuje się po swojemu \cite{hafemann2017review}, ponieważ zbiór CEDAR ich nie zawiera.
+
+Dla każdej osoby powstało więc 48 par pozytywnych i~48 par negatywnych (24 z~fałszerstwami wykwalifikowanymi i~24 z~fałszerstwami losowymi), dzięki czemu obie klasy są równoliczne i~sieć nie faworyzuje żadnej z~nich.
+Liczbę par w~poszczególnych zbiorach przedstawiono w~tabeli \ref{Tab:pary}.
+
+\begin{table}[ht]
+\caption{Liczba par podpisów w~zbiorach treningowym, walidacyjnym i~testowym}
+\centering
+	\begin{tabular}{|l|c|c|c|c|}
+		\hline
+		Zbiór & Pozytywne & Wykwalifikowane & Losowe & Razem \\
+		\hline
+		treningowy & 1680 & 840 & 840 & 3360 \\
+		walidacyjny & 480 & 240 & 240 & 960 \\
+		testowy & 480 & 240 & 240 & 960 \\
+		\hline
+		razem & 2640 & 1320 & 1320 & 5280 \\
+		\hline
+	\end{tabular}
+\label{Tab:pary}
+\end{table}
+
+Pary zapisano w~plikach CSV, w~których dla każdej pary podano nazwy obu plików, numery osób, rodzaj pary oraz zbiór, do którego należy.
+Losowanie wykonano z~ustalonymi ziarnami generatora liczb losowych, dzięki czemu pary można odtworzyć.
+Po zapisaniu pliki sprawdzono automatycznie: dla każdej pary porównano numer osoby odczytany z~nazwy pliku z~numerem zapisanym w~pliku CSV, sprawdzono, czy oba podpisy należą do właściwego zbioru, oraz czy rodzaj pary jest zgodny z~osobami, od których pochodzą podpisy.
+Sprawdzenie nie wykazało żadnych błędów.
 
 
 \section{Model sieci syjamskiej}
@@ -219,7 +294,8 @@ Taka metoda odróżnia więc podpisy różnych osób, ale nie odróżnia fałsze
 \bibitem{hafemann2017review} Hafemann L.G., Sabourin R., Oliveira L.S.: Offline Handwritten Signature Verification --- Literature Review. 7th International Conference on Image Processing Theory, Tools and Applications (IPTA), 2017.
 \bibitem{bromley1993} Bromley J., Guyon I., LeCun Y., Säckinger E., Shah R.: Signature Verification using a ,,Siamese'' Time Delay Neural Network. Advances in Neural Information Processing Systems 6 (NIPS 1993), str. 737--744.
 \bibitem{dey2017} Dey S., Dutta A., Toledo J.I., Ghosh S.K., Lladós J., Pal U.: SigNet: Convolutional Siamese Network for Writer Independent Offline Signature Verification. arXiv:1707.02131, 2017.
-\bibitem{kalera2004} Kalera M.K., Srihari S.N., Xu A.: Offline Signature Verification and Identification Using Distance Statistics. International Journal of Pattern Recognition and Artificial Intelligence, vol.~18, nr~7, 2004, str. 1339--1360.\bibitem{hafemann2017features} Hafemann L.G., Sabourin R., Oliveira L.S.: Learning Features for Offline Handwritten Signature Verification using Deep Convolutional Neural Networks. Pattern Recognition, vol.~70, 2017, str. 163--176.
+\bibitem{kalera2004} Kalera M.K., Srihari S.N., Xu A.: Offline Signature Verification and Identification Using Distance Statistics. International Journal of Pattern Recognition and Artificial Intelligence, vol.~18, nr~7, 2004, str. 1339--1360.
+\bibitem{hafemann2017features} Hafemann L.G., Sabourin R., Oliveira L.S.: Learning Features for Offline Handwritten Signature Verification using Deep Convolutional Neural Networks. Pattern Recognition, vol.~70, 2017, str. 163--176.
 \bibitem{cedarkaggle} CEDAR Signature Dataset, \url{https://www.kaggle.com/datasets/shreelakshmigp/cedardataset}. Dostęp 29.09.2026.
 
 \end{thebibliography}

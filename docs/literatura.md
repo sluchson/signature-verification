@@ -7,7 +7,8 @@
 - IPTA 2017, DOI 10.1109/IPTA.2017.8310112, strony do sprawdzenia
 - PDF: https://arxiv.org/pdf/1507.07909
 - abstrakt, 1. zdanie: dziedzina badana od dekad, nadal problem otwarty, cytowane we Wstępie
-- rozdz. II: writer-dependent i writer-independent, rodzaje fałszerstw
+- abstrakt, 4. zdanie: uczenie głębokie uczy się cech z obrazów podpisów, cytowane we Wstępie
+- rozdz. II: writer-dependent i writer-independent, rodzaje fałszerstw, cytowane w 3.3 i 3.4
 - rozdz. VI-F: definicje FRR, FAR, EER
 - tabela IV: wyniki innych metod na CEDAR, do porównania w rozdz. 5
 - numeracja rozdziałów wg wersji z arXiv, w wersji IPTA może być inna
@@ -75,7 +76,7 @@
 - rozdz. 3.3 i tab. 3: CEDAR podzielony 50 osób trening / 5 test (u mnie 35/10/10)
 - wyniki na CEDAR do porównania w rozdz. 5
 - najbardziej podobna praca do mojej (sieć syjamska, CNN, contrastive loss, CEDAR)
-- rozdz. 3.1.1: opis zbioru CEDAR, cytowane w rozdz. 3.1
+- cytowane w 3.1 (CEDAR często używany) i 3.3 (writer-independent, podział 50/5)
 - rozdz. 2.1: obrazy skalowane do 155×220, odwrócone kolory
 
 ### Hafemann, Sabourin, Oliveira 2017 — Learning Features for Offline Handwritten Signature Verification using Deep CNNs
@@ -91,18 +92,15 @@
 ## Zbiór danych (rozdz. 3)
 
 ### Kalera, Srihari, Xu 2004 — Offline Signature Verification and Identification Using Distance Statistics
-- nieprzeczytane
-- Int. Journal of Pattern Recognition and Artificial Intelligence, DOI 10.1142/S0218001404003630
-- vol. 18, nr 7 (listopad 2004), str. 1339–1360, potwierdzone w CV Srihariego i w bibliografii Hafemann i in. 2017
-- 29.09.2026: wysłana prośba o pełny tekst na ResearchGate
-- źródło zbioru CEDAR, cytować w rozdz. 3.1 przy opisie zbioru
+- Int. Journal of Pattern Recognition and Artificial Intelligence
 - mam PDF, do przeczytania rozdz. 1–2 (ok. 3 strony)
-- vol. 18, nr 7 (listopad 2004), str. 1339–1360
-- str. 1339 (wstęp): obrazy offline nie mają informacji o ruchu, fałszerstwa wykwalifikowane trudne, cytowane we Wstępie
-- str. 1341 (rozdz. 2.1): zbiór zbudowany w CEDAR, 55 osób × 24 prawdziwe, ok. 20 fałszerzy, 24 fałszerstwa na osobę, 300 dpi, 8-bit skala szarości, PNG, pole 2×2 cale, cytowane w rozdz. 3.1
+- vol. 18, nr 7 (listopad 2004), str. 1339–1360, DOI 10.1142/S0218001404003630
+- źródło zbioru CEDAR
+- str. 1339 (wstęp): obrazy offline bez informacji o ruchu, fałszerstwa wykwalifikowane trudne, cytowane we Wstępie
+- str. 1341 (rozdz. 2.1): opis zbioru, cytowane w 3.1 i 3.2 (8-bit skala szarości)
 - str. 1342 (tab. 1): podsumowanie zbioru
-- str. 1349 (rozdz. 3.1.1): ich podział dzieli podpisy, nie osoby (16 trening / 8 test, te same 55 osób), czyli writer-dependent, do rozdz. 5
-- metoda: cechy GSC na obrazach zbinaryzowanych, bez sieci neuronowych, 78% dokładności weryfikacji (abstrakt)
+- str. 1349 (rozdz. 3.1.1): podział podpisów 16/8, te same osoby w treningu i teście, cytowane w 3.3
+- metoda: cechy GSC na obrazach zbinaryzowanych, 78% dokładności weryfikacji (abstrakt)
 
 ## Podstawy uczenia głębokiego (rozdz. 2, 4)
 
