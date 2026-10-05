@@ -96,6 +96,13 @@
 - vol. 18, nr 7 (listopad 2004), str. 1339–1360, potwierdzone w CV Srihariego i w bibliografii Hafemann i in. 2017
 - 29.09.2026: wysłana prośba o pełny tekst na ResearchGate
 - źródło zbioru CEDAR, cytować w rozdz. 3.1 przy opisie zbioru
+- mam PDF, do przeczytania rozdz. 1–2 (ok. 3 strony)
+- vol. 18, nr 7 (listopad 2004), str. 1339–1360
+- str. 1339 (wstęp): obrazy offline nie mają informacji o ruchu, fałszerstwa wykwalifikowane trudne, cytowane we Wstępie
+- str. 1341 (rozdz. 2.1): zbiór zbudowany w CEDAR, 55 osób × 24 prawdziwe, ok. 20 fałszerzy, 24 fałszerstwa na osobę, 300 dpi, 8-bit skala szarości, PNG, pole 2×2 cale, cytowane w rozdz. 3.1
+- str. 1342 (tab. 1): podsumowanie zbioru
+- str. 1349 (rozdz. 3.1.1): ich podział dzieli podpisy, nie osoby (16 trening / 8 test, te same 55 osób), czyli writer-dependent, do rozdz. 5
+- metoda: cechy GSC na obrazach zbinaryzowanych, bez sieci neuronowych, 78% dokładności weryfikacji (abstrakt)
 
 ## Podstawy uczenia głębokiego (rozdz. 2, 4)
 

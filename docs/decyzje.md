@@ -113,4 +113,6 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - nie binaryzuję, więc różnica w tle trafiłaby do sieci
 - decyzja: usunięcie tła metodą Otsu, tło = 255, atrament zostaje w skali szarości (jak Hafemann i in. 2017, rozdz. 3.3)
 - po przetworzeniu powtórzyć test `background_level` i sprawdzić, czy różnica zniknęła
+- wg Kalera i in. (str. 1341) oryginał był w 8-bitowej skali szarości, a w kopii z Kaggle są też RGBA i P, czyli kopia była konwertowana
+- nie wiadomo, czy różnica tła pochodzi z oryginalnego skanowania, czy z tej konwersji, poprawka Otsu działa w obu przypadkach
 - notebook `01_eksploracja_danych.ipynb`
