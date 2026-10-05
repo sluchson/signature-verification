@@ -3,12 +3,14 @@
 ## Weryfikacja podpisu (rozdz. 1, 2)
 
 ### Hafemann, Sabourin, Oliveira 2017 — Offline Handwritten Signature Verification: Literature Review
-- nieprzeczytane
+- przeczytany abstrakt i rozdz. II
 - IPTA 2017, DOI 10.1109/IPTA.2017.8310112, strony do sprawdzenia
 - PDF: https://arxiv.org/pdf/1507.07909
 - abstrakt, 1. zdanie: dziedzina badana od dekad, nadal problem otwarty, cytowane we Wstępie
 - abstrakt, 4. zdanie: uczenie głębokie uczy się cech z obrazów podpisów, cytowane we Wstępie
-- rozdz. II: writer-dependent i writer-independent, rodzaje fałszerstw, cytowane w 3.3 i 3.4
+- rozdz. I: rodzaje fałszerstw (losowe, proste, wykwalifikowane), cytowane w 3.4
+- rozdz. II: writer-dependent i writer-independent, cytowane w 3.3
+- rozdz. II.A: duża zmienność podpisów jednej osoby, mało próbek na osobę
 - rozdz. VI-F: definicje FRR, FAR, EER
 - tabela IV: wyniki innych metod na CEDAR, do porównania w rozdz. 5
 - numeracja rozdziałów wg wersji z arXiv, w wersji IPTA może być inna
