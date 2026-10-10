@@ -1,1 +1,1 @@
-Folder przechowujacy wykresy, tabele, logi eksperymentow.
+Wyniki eksperymentów (experiments.csv), jeden wiersz na trening.

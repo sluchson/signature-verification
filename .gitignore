@@ -12,3 +12,5 @@ models/*
 !models/README.md
 
 .ipynb_checkpoints/
+
+literatura_pdf/

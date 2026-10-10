@@ -8,6 +8,13 @@
 \documentclass[12pt, twoside, openright]{article}
 
 \usepackage{weiiszablon}
+% szablon ładuje lmodern po mathptmx, przez co tekst wychodzi w Latin Modern zamiast Times
+\renewcommand{\rmdefault}{ptm}
+\renewcommand{\ttdefault}{pcr}
+\DeclareSymbolFont{operators}{OT1}{ztmcm}{m}{n}
+\DeclareSymbolFont{letters}{OML}{ztmcm}{m}{it}
+\DeclareSymbolFont{symbols}{OMS}{ztmcm}{m}{n}
+\DeclareSymbolFont{largesymbols}{OMX}{ztmcm}{m}{n}
 \usepackage[section]{placeins}
 
 \author{Maciej Pereślucha}
@@ -38,9 +45,19 @@
 \cleardoublepage
 
 
-% TODO: odkomentować, gdy w tekście pojawią się skróty/symbole (np. CNN, EER, FAR, FRR)
-% \section*{Wykaz symboli, oznaczeń i skrótów}
-% \addcontentsline{toc}{section}{Wykaz symboli, oznaczeń i skrótów}
+% Wykaz uzupełniać na bieżąco, alfabetycznie (później dojdą m.in. CNN, FAR, FRR)
+\section*{Wykaz symboli, oznaczeń i skrótów}
+\addcontentsline{toc}{section}{Wykaz symboli, oznaczeń i skrótów}
+
+\begin{description}[leftmargin=2.5cm, labelwidth=2cm, labelsep=0.5cm, font=\normalfont]
+	\item[CEDAR] Center of Excellence for Document Analysis and Recognition -- ośrodek Uniwersytetu w~Buffalo, autor zbioru podpisów
+	\item[CSV] ang. \textit{comma-separated values} -- format pliku tekstowego z~wartościami rozdzielonymi przecinkami
+	\item[EER] ang. \textit{equal error rate} -- równy współczynnik błędów
+	\item[MD5] ang. \textit{Message Digest 5} -- algorytm obliczania skrótu pliku
+	\item[RGBA] ang. \textit{red, green, blue, alpha} -- zapis obrazu w~trzech kanałach koloru i~kanale przezroczystości
+\end{description}
+
+\cleardoublepage
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -63,7 +80,7 @@ W~pracy wykorzystano podpisy w~postaci zeskanowanych obrazów.
 Taki wariant nazywa się weryfikacją statyczną (ang. \textit{offline}), w~odróżnieniu od weryfikacji dynamicznej (ang. \textit{online}), w~której podpis składany jest na tablecie rejestrującym na przykład prędkość ruchu pióra.
 Na obrazie tych informacji nie ma, widoczny jest tylko kształt podpisu.
 Najtrudniejsze do wykrycia są fałszerstwa wykwalifikowane, czyli podpisy podrobione przez osobę, która wcześniej ćwiczyła naśladowanie oryginału \cite{kalera2004}.
-Wstępna analiza danych wykonana w~ramach pracy pokazała, że proste porównanie obrazów piksel po pikselu myli się w~ponad jednej trzeciej przypadków, dlatego potrzebna jest bardziej zaawansowana metoda.
+Wstępna analiza danych wykonana w~ramach pracy pokazała, że proste porównanie obrazów piksel po pikselu myli się w~około jednej trzeciej przypadków, dlatego potrzebna jest bardziej zaawansowana metoda.
 
 Celem pracy było opracowanie systemu, który na podstawie zeskanowanego obrazu sprawdza, czy podpis jest autentyczny, oraz ocena jego skuteczności.
 System oparto na sieci syjamskiej i~zaprojektowano tak, aby działał również dla osób, których podpisy nie były używane podczas treningu.
@@ -138,21 +155,21 @@ Na rys. \ref{Fig:cedar_przyklad} przedstawiono przykładowe podpisy jednej osoby
 \label{Subsec:eksploracja}
 
 Przed przygotowaniem danych do treningu przeprowadzono analizę zbioru, aby sprawdzić jego poprawność i~wykryć cechy obrazów, które mogłyby utrudnić trening sieci albo zafałszować wyniki.
-Analizę wykonano w~języku Python z~użyciem bibliotek PIL i~NumPy.
+Analizę wykonano w~języku Python z~użyciem bibliotek Pillow i~NumPy.
 
 Najpierw sprawdzono kompletność zbioru.
 W~katalogu \texttt{full\_org} znajduje się 1320 obrazów i~tyle samo w~katalogu \texttt{full\_forg}, po 24 dla każdej z~55 osób.
-Dla każdego pliku obliczono skrót MD5, co pozwoliło stwierdzić, że w~zbiorze nie ma powtórzonych obrazów.
+Dla każdego pliku obliczono skrót MD5 (ang. \textit{Message Digest 5} -- algorytm obliczania skrótu), co pozwoliło stwierdzić, że w~zbiorze nie ma powtórzonych obrazów.
 Sprawdzono także, czy wszystkie pliki dają się poprawnie otworzyć, i~żaden nie okazał się uszkodzony.
 Oprócz obrazów w~katalogach znajdują się jedynie pliki systemowe \texttt{Thumbs.db}, które pominięto.
 
 Następnie sprawdzono tryby kolorów obrazów.
-Według autorów zbioru wszystkie podpisy zapisano w~8-bitowej skali szarości \cite{kalera2004}, jednak w~użytej kopii podpisy prawdziwe zapisane są w~trybach RGBA (cztery kanały) i~L (skala szarości), a~fałszerstwa w~trybach P (paleta kolorów) i~RGBA.
+Według autorów zbioru wszystkie podpisy zapisano w~8-bitowej skali szarości \cite{kalera2004}, jednak w~użytej kopii podpisy prawdziwe zapisane są w~trybach RGBA (ang. \textit{red, green, blue, alpha} -- trzy kanały koloru i~kanał przezroczystości) i~L (skala szarości), a~fałszerstwa w~trybach P (paleta kolorów) i~RGBA.
 Kolor nie niesie informacji o~kształcie podpisu, dlatego wszystkie obrazy przy wczytywaniu zamieniane są na skalę szarości.
 
 Obrazy w~zbiorze nie mają wspólnego rozmiaru.
 Wśród 1320 podpisów prawdziwych występuje 1095 różnych rozmiarów, a~wśród fałszerstw 1006.
-Mediana rozmiaru wynosi 577~$\times$~349 pikseli dla podpisów prawdziwych i~576~$\times$~336 pikseli dla fałszerstw (szerokość $\times$ wysokość), a~szerokość obrazów waha się od 264 do 888 pikseli.
+Mediana rozmiaru wynosi 577~$\times$~349 pikseli dla podpisów prawdziwych i~576~$\times$~336 pikseli dla fałszerstw (szerokość~$\times$~wysokość), a~szerokość obrazów waha się od 264 do 888 pikseli.
 Sieć wymaga obrazów o~jednakowym rozmiarze, dlatego wszystkie obrazy trzeba przeskalować.
 Ponieważ podpisy są wyraźnie szersze niż wyższe (proporcja około 1,7:1), wejście sieci powinno mieć kształt prostokąta, a~nie kwadratu.
 Okazało się również, że rozmiar obrazu niemal jednoznacznie wskazuje osobę, do której należy podpis: 85,4\% rozmiarów występujących wśród podpisów prawdziwych i~78,1\% wśród fałszerstw pojawia się tylko u~jednej osoby.
@@ -160,7 +177,8 @@ Gdyby obrazy nie zostały ujednolicone, sieć mogłaby nauczyć się rozpoznawa�
 
 Prostokąt obejmujący podpis zajmuje średnio około 60\% powierzchni obrazu (60,1\% dla podpisów prawdziwych i~58,6\% dla fałszerstw), a~resztę stanowi puste tło.
 Za piksele podpisu uznano piksele o~jasności mniejszej niż 200.
-Przeskalowanie całego obrazu do niewielkiego wejścia sieci oznaczałoby, że znaczna jego część przypadałaby na tło, dlatego przed skalowaniem obrazy przycinane są do prostokąta zawierającego podpis.
+Przy przeskalowaniu całego obrazu do niewielkiego wejścia sieci znaczna jego część przypadałaby więc na tło.
+Z~tego powodu rozważono przycinanie obrazów do prostokąta zawierającego podpis, a~wybór sposobu przygotowania obrazu opisano w~podrozdziale~\ref{Subsec:przygotowanie}.
 
 Najważniejszym wynikiem analizy okazała się różnica w~jasności tła między podpisami prawdziwymi a~fałszerstwami.
 Dla każdego obrazu obliczono medianę jasności pikseli, która, ponieważ podpis zajmuje tylko niewielką część pikseli, odpowiada w~przybliżeniu jasności tła.
@@ -185,7 +203,7 @@ Obrazy przeskalowano do rozmiaru 128~$\times$~128 pikseli i~dla wszystkich par o
 Rozkłady te w~dużym stopniu się nakładają.
 Korelację potraktowano jako miarę podobieństwa i~wybrano próg, przy którym odsetek błędnie odrzuconych par prawdziwych jest równy odsetkowi błędnie zaakceptowanych par fałszywych.
 Błąd w~tym punkcie, nazywany równym współczynnikiem błędów (ang. \textit{equal error rate}, EER), wyniósł 38,0\% dla fałszerstw wykwalifikowanych i~32,3\% dla fałszerstw losowych.
-Prosta metoda myli się więc w~ponad jednej trzeciej przypadków, co uzasadnia zastosowanie sieci neuronowej.
+Prosta metoda myli się więc w~około jednej trzeciej przypadków, co uzasadnia zastosowanie sieci neuronowej.
 Wynik ten posłuży również jako punkt odniesienia przy ocenie sieci w~rozdziale~\ref{Sec:wyniki}.
 
 \subsection{Podział na zbiory niezależne od autora}
@@ -260,7 +278,7 @@ Liczbę par w~poszczególnych zbiorach przedstawiono w~tabeli \ref{Tab:pary}.
 \label{Tab:pary}
 \end{table}
 
-Pary zapisano w~plikach CSV, w~których dla każdej pary podano nazwy obu plików, numery osób, rodzaj pary oraz zbiór, do którego należy.
+Pary zapisano w~plikach CSV (ang. \textit{comma-separated values} -- wartości rozdzielone przecinkami), w~których dla każdej pary podano nazwy obu plików, numery osób, rodzaj pary oraz zbiór, do którego należy.
 Losowanie wykonano z~ustalonymi ziarnami generatora liczb losowych, dzięki czemu pary można odtworzyć.
 Po zapisaniu pliki sprawdzono automatycznie: dla każdej pary porównano numer osoby odczytany z~nazwy pliku z~numerem zapisanym w~pliku CSV, sprawdzono, czy oba podpisy należą do właściwego zbioru, oraz czy rodzaj pary jest zgodny z~osobami, od których pochodzą podpisy.
 Sprawdzenie nie wykazało żadnych błędów.
@@ -269,6 +287,98 @@ Sprawdzenie nie wykazało żadnych błędów.
 \section{Model sieci syjamskiej}
 \label{Sec:model}
 
+W~rozdziale opisano kolejne elementy proponowanego rozwiązania: przygotowanie obrazów przed podaniem ich do sieci, budowę sieci syjamskiej, funkcję straty oraz sposób treningu.
+
+\subsection{Przygotowanie obrazów}
+\label{Subsec:przygotowanie}
+
+Analiza opisana w~podrozdziale \ref{Subsec:eksploracja} pokazała, że obrazy w~zbiorze CEDAR różnią się rozmiarem i~trybem kolorów, a~podpisy prawdziwe i~fałszerstwa różnią się jasnością tła.
+Przed podaniem do sieci każdy obraz przechodzi więc przez te same kroki, wykonywane w~podanej kolejności:
+\begin{enumerate}
+	\item zamiana na skalę szarości,
+	\item usunięcie tła metodą Otsu,
+	\item wyrównanie ciemności atramentu,
+	\item dopasowanie do rozmiaru wejścia sieci bez zniekształcania proporcji,
+	\item odwrócenie jasności i~przeskalowanie wartości do przedziału od 0 do 1.
+\end{enumerate}
+Wszystkie kroki zaimplementowano w~języku Python z~użyciem bibliotek OpenCV i~NumPy.
+Kolejne kroki dla przykładowego podpisu prawdziwego i~fałszerstwa przedstawiono na rys.~\ref{Fig:przygotowanie}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=\textwidth]{figures/przygotowanie_obrazow.png}
+	\caption{Kolejne kroki przygotowania obrazu dla podpisu prawdziwego (dwa górne wiersze) i~fałszerstwa wykwalifikowanego (dwa dolne wiersze) osoby nr~1: a)~oryginał, b)~po usunięciu tła, c)~po wyrównaniu atramentu, d)~po dopasowaniu do rozmiaru 128~$\times$~256, e)~po odwróceniu jasności}
+	\label{Fig:przygotowanie}
+\end{figure}
+
+\subsubsection*{Usunięcie tła}
+
+Do oddzielenia podpisu od tła użyto metody Otsu \cite{otsu1979}, która automatycznie wyznacza próg jasności na podstawie histogramu obrazu.
+Metoda dzieli piksele progiem $k$ na dwie grupy: piksele ciemniejsze od progu (podpis) i~piksele jaśniejsze (tło).
+Dla każdego możliwego progu obliczana jest wariancja międzyklasowa
+\begin{equation}
+	\sigma_B^2(k) = \omega_0(k)\,\omega_1(k)\,\big(\mu_1(k) - \mu_0(k)\big)^2,
+	\label{Eq:otsu}
+\end{equation}
+gdzie $\omega_0$ i~$\omega_1$ oznaczają udział pikseli w~każdej z~grup, a~$\mu_0$ i~$\mu_1$ ich średnią jasność.
+Wybierany jest próg, dla którego wartość $\sigma_B^2$ jest największa, czyli taki, przy którym obie grupy najbardziej różnią się jasnością \cite{otsu1979}.
+
+Piksele jaśniejsze od wyznaczonego progu otrzymują wartość 255 (kolor biały), a~piksele podpisu zachowują swoją jasność, tak jak w~pracy \cite{hafemann2017features}.
+Obraz nie jest więc binaryzowany, a~sieć dostaje informację o~odcieniach kresek.
+Wyznaczone progi wynosiły od 170 do 210 dla podpisów prawdziwych i~od 174 do 226 dla fałszerstw.
+Po tym kroku mediana jasności każdego z~2640 obrazów wynosi 255, więc różnica jasności tła opisana w~podrozdziale \ref{Subsec:eksploracja} zostaje usunięta.
+Wpływ tego kroku na wyniki sieci zbadano w~rozdziale~\ref{Sec:wyniki}.
+
+\subsubsection*{Wybór obszaru obrazu}
+
+Rozważono trzy sposoby wyboru obszaru obrazu, który jest następnie dopasowywany do wejścia sieci.
+W~pierwszym obraz jest przycinany do najmniejszego prostokąta zawierającego wszystkie piksele podpisu, czyli piksele o~jasności mniejszej niż 255 po usunięciu tła.
+Podpis zajmuje wtedy możliwie dużą część wejścia sieci, ale każdy podpis jest skalowany inaczej, więc informacja o~jego rozmiarze zostaje utracona.
+W~drugim do wejścia sieci dopasowywany jest cały obraz po usunięciu tła, podobnie jak w~pracy \cite{dey2017}.
+W~trzecim podpis jest umieszczany na białym tle o~rozmiarze 730~$\times$~1460 pikseli, większym niż największy podpis w~zbiorze, tak aby jego środek masy znalazł się w~środku tła, jak w~pracy \cite{hafemann2017features}.
+Wszystkie podpisy są wtedy skalowane w~tej samej skali, ale na wejściu sieci zajmują niewielką część obrazu.
+
+Warianty porównano doświadczalnie, a~wyniki przedstawiono w~rozdziale~\ref{Sec:wyniki}.
+Najmniejszy błąd na zbiorze walidacyjnym uzyskano dla całego obrazu, dlatego ten wariant przyjęto jako podstawowy.
+
+\subsubsection*{Wyrównanie ciemności atramentu}
+
+Po usunięciu tła okazało się, że podpisy prawdziwe i~fałszerstwa różnią się także ciemnością kresek.
+Podpisy jednej osoby zbierano w~jednej sesji tym samym długopisem, a~fałszerstwa powstawały w~innych warunkach.
+Mediana różnicy ciemności atramentu wynosiła 3 dla par dwóch podpisów prawdziwych tej samej osoby i~18 dla par z~fałszerstwem.
+Porównanie samej ciemności atramentu, bez analizy kształtu podpisu, dawało dla fałszerstw wykwalifikowanych EER równy 21,1\%.
+
+Aby ograniczyć tę różnicę, jasność pikseli podpisu jest przeskalowywana tak, aby mediana ich ciemności (różnicy między 255 a~jasnością piksela) była taka sama w~każdym obrazie.
+Po przeskalowaniu mediana jasności pikseli podpisu wynosi 100.
+Kształt kresek i~różnice odcieni w~obrębie podpisu zostają zachowane.
+Po tej zmianie EER uzyskany na podstawie samej ciemności atramentu wzrósł do 36,7\%.
+Różnica nie zniknęła całkowicie, co prawdopodobnie wynika z~różnej grubości kresek przy użyciu innego długopisu.
+
+\subsubsection*{Dopasowanie do rozmiaru wejścia}
+
+% TODO: uzupełnić po eksperymencie z~rozmiarem wejścia
+Jako rozmiar wejścia sieci przyjęto 128~$\times$~256 pikseli (wysokość~$\times$~szerokość).
+Obraz jest zmniejszany lub powiększany z~zachowaniem proporcji tak, aby zmieścił się w~tym prostokącie, a~wolne miejsce jest dopełniane białym tłem.
+Obraz znajduje się w~środku wejścia sieci.
+Proporcji nie zmieniano, ponieważ rozciągnięcie obrazu zmieniłoby kształt liter, inaczej niż w~pracy \cite{dey2017}, w~której wszystkie obrazy skalowano do jednego rozmiaru bez zachowania proporcji.
+Proporcję 1:2 dobrano na początku prac do obrazów przyciętych do podpisu, dla których mediana stosunku szerokości do wysokości wynosiła około 2,1.
+Całe obrazy mają proporcję około 1,7 (podrozdział~\ref{Subsec:eksploracja}), więc po ich bokach pozostają wąskie białe pasy.
+Wpływ rozmiaru wejścia na wyniki zbadano w~rozdziale~\ref{Sec:wyniki}.
+Przy zmniejszaniu użyto interpolacji \texttt{INTER\_AREA}, która uśrednia piksele i~nie gubi cienkich kresek.
+
+\subsubsection*{Odwrócenie jasności}
+
+Na koniec jasność każdego piksela $p$ jest zamieniana na wartość $1 - p/255$.
+Tło ma wtedy wartość 0, a~piksele podpisu wartości bliskie 1, tak jak w~pracach \cite{dey2017, hafemann2017features}.
+Taka postać jest wygodna dla sieci, ponieważ puste miejsca obrazu mają wartość zero, tak samo jak dopełnienie stosowane przy obrotach i~przesunięciach obrazu w~czasie augmentacji danych (podrozdział~\ref{Subsec:trening}).
+
+\subsubsection*{Wpływ przygotowania obrazów na metodę porównawczą}
+
+Prosta metoda porównawcza z~podrozdziału \ref{Subsec:eksploracja} została powtórzona na obrazach przygotowanych w~opisany sposób.
+EER wyniósł 38,0\% dla fałszerstw wykwalifikowanych i~32,0\% dla fałszerstw losowych, czyli prawie tyle samo co dla obrazów nieprzetworzonych (38,0\% i~32,3\%).
+Przygotowanie obrazów nie ułatwia więc zadania prostej metodzie, która nadal myli się w~około jednej trzeciej przypadków.
+Gdy obrazy dodatkowo przycinano do prostokąta zawierającego podpis, EER dla fałszerstw wykwalifikowanych wzrastał do 42,1\%.
+Wskazuje to, że położenie i~rozmiar podpisu na obrazie niosą pewną informację przydatną do wykrywania fałszerstw, co omówiono w~rozdziale~\ref{Sec:wyniki}.
 
 \section{Badania eksperymentalne i wyniki}
 \label{Sec:wyniki}
@@ -297,6 +407,7 @@ Sprawdzenie nie wykazało żadnych błędów.
 \bibitem{kalera2004} Kalera M.K., Srihari S.N., Xu A.: Offline Signature Verification and Identification Using Distance Statistics. International Journal of Pattern Recognition and Artificial Intelligence, vol.~18, nr~7, 2004, str. 1339--1360.
 \bibitem{hafemann2017features} Hafemann L.G., Sabourin R., Oliveira L.S.: Learning Features for Offline Handwritten Signature Verification using Deep Convolutional Neural Networks. Pattern Recognition, vol.~70, 2017, str. 163--176.
 \bibitem{cedarkaggle} CEDAR Signature Dataset, \url{https://www.kaggle.com/datasets/shreelakshmigp/cedardataset}. Dostęp 29.09.2026.
+\bibitem{otsu1979} Otsu N.: A Threshold Selection Method from Gray-Level Histograms. IEEE Transactions on Systems, Man, and Cybernetics, vol.~SMC-9, nr~1, 1979, str.~62--66.
 
 \end{thebibliography}
 

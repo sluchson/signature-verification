@@ -55,6 +55,7 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - różne tryby kolorów: `full_org` RGBA i L, `full_forg` P i RGBA
 - sieć potrzebuje tego samego rozmiaru i tej samej liczby kanałów
 - kolor nic nie mówi o kształcie podpisu, jeden kanał wystarczy
+- żaden obraz nie ma przezroczystości (kanał alfa pełny), więc zamiana na L nic nie gubi
 - notebook `01_eksploracja_danych.ipynb`
 
 ## Wrzesień 2026 — Proporcje wejścia sieci
@@ -82,7 +83,7 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - pliki sprawdzone (MD5 + `PIL.Image.verify()`): brak uszkodzeń i duplikatów
 - test korelacji pikseli (128×128) na wszystkich 5280 parach:
   prawdziwy–prawdziwy 0,158 ± 0,090, prawdziwy–fałszerstwo 0,104 ± 0,069, różne osoby 0,083 ± 0,061
-- EER: 38,0% dla fałszerstw wykwalifikowanych, 32,3% dla różnych osób, czyli metoda myli się w ponad 1/3 przypadków
+- EER: 38,0% dla fałszerstw wykwalifikowanych, 32,3% dla różnych osób, czyli metoda myli się w ok. 1/3 przypadków
 - wcześniejszy test na 10 parach (0,146 = 0,146) dawał mylący wniosek, że metoda w ogóle nie odróżnia fałszerstw
 - to będzie metoda bazowa do porównania z siecią w rozdz. 5
 - powtórzyć test po usunięciu tła (Otsu), żeby sprawdzić, ile z wyniku dla fałszerstw wynika z tła
@@ -180,3 +181,87 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - rozrzut między seedami duży (wykwalifikowane od 18,8% do 28,6%)
 - najlepsze epoki od 2 do 11, 30 epok to za dużo; 6 treningów = 33 min
 - notebook `04_eksperymenty.ipynb`
+
+## Październik 2026 — Eksperyment: augmentacja
+- augmentacja tylko na zbiorze treningowym, walidacja i test bez zmian
+- geometria: obrót do ±5°, przesunięcie do 5%, zmniejszenie do 85–100%
+- powiększania nie ma, bo ucinało końce podpisu
+- grubość: z prawdopodobieństwem 50% kreski pogrubione o 1 px (`max_pool2d` 3×3)
+- pocieniania nie ma, bo cienkie kreski znikały
+- każdy wariant 3 razy (seed 1, 2, 3), porównanie z „nowe pary” (te same ustawienia, tylko bez augmentacji)
+- bez augmentacji: EER wykwalifikowane 24,6% ± 3,0, losowe 16,1% ± 1,4
+- geometria: EER wykwalifikowane 20,3% ± 1,9, losowe 11,1% ± 0,6
+- geometria + grubość: EER wykwalifikowane 23,0% ± 2,0, losowe 13,5% ± 1,4
+- geometria lepsza przy każdym seedzie, nie tylko średnio (wykwalifikowane 17,9 / 20,4 / 22,5 zamiast 21,4 / 28,7 / 23,7)
+- mniejszy rozrzut między seedami, EER walidacji 14,2% ± 0,8 zamiast 19,3% ± 2,2
+- najlepsza epoka średnio 11 zamiast 6, czyli sieć przeucza się później
+- pogrubianie kresek pogarsza wynik przy każdym seedzie
+- przypuszczenie: grubość kreski pomaga odróżnić fałszerstwo (po wyrównaniu atramentu zostawała grubość, patrz wpis „Atrament zdradza fałszerstwo”)
+- nie wiem, czy to prawdziwa cecha (fałszerz pisze wolniej i mocniej przyciska), czy kolejna różnica ze sposobu zbierania danych, opisać w rozdz. 5
+- decyzja: od teraz augmentacja geometryczna domyślnie włączona, bez pogrubiania
+- próg z walidacji dalej źle pasuje do osób testowych: FAR 26,8%, FRR 14,5% (wykwalifikowane), kolejny argument za walidacją krzyżową
+- tylko 3 seedy i jeden podział osób, więc wynik spójny, ale nie dowód statystyczny
+- 6 treningów = 43 min
+- notebook `04_eksperymenty.ipynb`
+
+## Październik 2026 — Eksperyment: wycieki (bez wyrównania atramentu, bez usuwania tła)
+- do `preprocess()` dodane przełączniki `background` i `ink`, domyślnie oba włączone (wynik taki sam jak wcześniej)
+- prostokąt do przycięcia zawsze liczony na obrazie po Otsu, więc we wszystkich wariantach wycinany jest ten sam fragment
+- wariantu „bez tła, z wyrównaniem atramentu” nie ma: bez usuwania tła wyrównanie potraktowałoby szare tło jak atrament
+- wszystkie warianty z augmentacją geometryczną, 3 seedy, porównanie z `aug_geom`
+- przewidywanie przed treningiem: bez poprawek EER dla fałszerstw wykwalifikowanych mocno spadnie, dla losowych prawie się nie zmieni
+- pełne przygotowanie: EER wykwalifikowane 20,3% ± 1,9, losowe 11,1% ± 0,6
+- bez wyrównania atramentu: EER wykwalifikowane 20,0% ± 1,6, losowe 12,6% ± 1,3
+- bez usuwania tła: EER wykwalifikowane 1,8% ± 0,7 (0,8 / 2,5 / 2,1), losowe 14,1% ± 1,3
+- tło: wyciek potwierdzony, sieć prawie bezbłędnie „wykrywa” fałszerstwa po jaśniejszym tle
+- przy progu z walidacji model bez usuwania tła akceptuje 42,6% par dwóch różnych osób (pełne przygotowanie: 8,2%)
+- czyli sieć nauczyła się porównywać tło, a nie rozpoznawać osobę; na fałszerstwach wygląda świetnie, w prawdziwym zadaniu jest gorsza
+- to skrót (shortcut) w rozumieniu Geirhos i in. 2020
+- SigNet ma na CEDAR 100% (Dey i in., tab. 4), próg dobierany na teście, bez usuwania tła; mój wynik 1,8% pokazuje, skąd taki wynik może się brać
+- atrament: przewidywanie się nie sprawdziło, wynik bez zmian
+- możliwe powody: sieć nie korzysta z ciemności, bierze tę samą informację z grubości kresek albo ciemność nic nie dokłada do kształtu
+- wyrównanie atramentu zostaje, bo nie szkodzi, a dla fałszerstw losowych wynik trochę lepszy
+- najlepsze epoki w nowych wariantach późno (19–27 z 30), modele mogły się jeszcze poprawiać, ważne przed zmniejszaniem liczby epok
+- 6 treningów = 41 min
+- notebook `04_eksperymenty.ipynb`
+
+## Październik 2026 — Eksperyment: trening bez fałszerstw wykwalifikowanych
+- dwa nowe przełączniki w `train.py`: `skilled_train` (fałszerstwa w treningu) i `skilled_val` (fałszerstwa przy wyborze epoki i progu)
+- bez fałszerstw w treningu 48 par „ta sama osoba” i 48 par losowych na osobę, żeby klasy były po równo
+- poprawka w `resample`: przy 48 parach losowych każdy podpis osoby użyty 2 razy; dla 24 par wynik taki sam jak wcześniej (sprawdzone)
+- komórka kontrolna: 3360 par, 1680/1680, 0 fałszerstw, 0 par losowych z tą samą osobą
+- 3 seedy, porównanie z `aug_geom`
+- aug_geom: EER wykwalifikowane 20,3% ± 1,9, losowe 11,1% ± 0,6
+- bez fałszerstw w treningu: EER wykwalifikowane 26,4% ± 2,3, losowe 9,2% ± 1,2
+- bez fałszerstw w ogóle (także wybór epoki i progu): EER wykwalifikowane 27,8% ± 0,5, losowe 10,5% ± 0,6
+- fałszerstwa w treningu dają ok. 6 pkt, przy każdym seedzie; nie wiem, czy to prawdziwe cechy fałszerstw, czy resztka wycieku (np. grubość kresek)
+- bez fałszerstw sieć i tak dużo lepsza niż metoda bazowa (45,7% na teście), czyli uczy się głównie kształtu podpisu
+- pary losowe lepiej bez fałszerstw, bo w treningu jest ich dwa razy więcej
+- wybór epoki na fałszerstwach daje niewiele (26,4% vs 27,8%)
+- próg z par losowych za łagodny na fałszerstwa: FAR 64,4%, FRR 3,9%; bez przykładów fałszerstw nie da się dobrze ustawić progu, do rozdz. 5
+- SigNet na GPDS: bez fałszerstw w treningu też gorzej (Dey i in., tab. 4)
+- decyzja: w głównym modelu zostają fałszerstwa w treningu i walidacji, ten eksperyment opisać jako wariant realistyczny
+- 6 treningów, notebook `04_eksperymenty.ipynb`
+
+## Październik 2026 — Eksperyment: sposób przycinania
+- do `preprocess()` dodany przełącznik `crop`: `bbox` (przycięcie do podpisu), `none` (cały obraz po usunięciu tła), `center` (podpis na tle 730×1460 wg środka masy, jak Hafemann i in. 2017, rozdz. 3.3)
+- tło 730×1460, bo najwyższy przycięty podpis ma 729 px; to fałszerstwa osoby 7 (zbiór testowy), pisane ukośnie przez całą kartkę, przycinanie działa poprawnie
+- 3 seedy, augmentacja geometryczna, porównanie z `aug_geom` (= `bbox`)
+- przewidywanie przed treningiem: `bbox` najlepszy lub podobny, `center` gorszy
+- bbox: EER wykwalifikowane 20,3% ± 1,9, losowe 11,1% ± 0,6, walidacja 14,2% ± 0,8
+- none: EER wykwalifikowane 17,2% ± 0,5, losowe 12,5% ± 1,2, walidacja 13,5% ± 0,9
+- center: EER wykwalifikowane 26,2% ± 0,7, losowe 17,3% ± 3,1, walidacja 18,7% ± 0,7
+- center gorszy, bo typowy podpis zajmuje na wejściu tylko ok. 38×91 px
+- none lepszy na fałszerstwach przy każdym seedzie, ale trochę gorszy na losowych; przewidywanie się nie sprawdziło
+- sprawdzenie wycieku przez kadr (EER z samej różnicy cechy w parze): środek y 49,3%, środek x 47,0%, wysokość 45,5%, wypełnienie 43,8%, szerokość 42,1%
+- położenie podpisu nic nie zdradza, rozmiar względem kartki tylko słabo; prostego wycieku brak
+- możliwe wyjaśnienie: przy `none` zostaje względny rozmiar podpisu i grubość kresek (przy `bbox` każdy podpis skalowany inaczej), nie sprawdzone
+- powtórzony trening (crop_none, seed 1) dał identyczny wynik co do cyfry, czyli trening jest w pełni powtarzalny
+- decyzja: od teraz `crop="none"` domyślnie, bo lepszy na walidacji, stabilniejszy i prostszy (jak SigNet)
+- wcześniejsze eksperymenty zostają ważne, bo porównywały warianty przy tym samym przycinaniu
+- do zrobienia: przerobić akapit o przycinaniu w rozdz. 4.1
+- metoda bazowa przy `none`: 38,0% (wykwalifikowane), 32,0% (losowe); atrament po wyrównaniu 36,7%
+- wniosek z wpisu „Atrament zdradza fałszerstwo” (42,1% → część wyniku z tła i atramentu) nieaktualny: wzrost do 42,1% powodowało przycinanie
+- ten wpis zastępuje decyzje z wpisów „Przycinanie do samego podpisu” i „Przygotowanie obrazów” (kolejność kroków, uzasadnienie 128×256)
+- usunięty zdublowany wiersz crop_none seed 1 z CSV
+- notebooki `02_przygotowanie_obrazow.ipynb` (kadr), `04_eksperymenty.ipynb` (trening)

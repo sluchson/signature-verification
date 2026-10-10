@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from src.dataset import SignaturePairs, ResampledPairs
+from src.dataset import SignaturePairs, ResampledPairs, make_augmentation
 from src.model import SignatureNet, contrastive_loss
 from src.metrics import eer, far_frr
 
@@ -25,6 +25,13 @@ DEFAULTS = {
     "margin": 1.0,
     "dropout": 0.3,
     "embedding_dim": 128,
+    "augment": True,
+    "thickness": False,
+    "background": True,
+    "ink": True,
+    "skilled_train": True,
+    "skilled_val": True,
+    "crop": "none",
 }
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -72,16 +79,34 @@ def scores(model, dataset, batch_size=64):
 
 def run_experiment(name, seed, **overrides):
     config = {**DEFAULTS, **overrides}
+    if not config["resample"] and not config["skilled_train"]:
+        raise ValueError("trening bez fałszerstw działa tylko z resample=True")
     set_seed(seed)
 
-    if config["resample"]:
-        train_set = get_dataset("train_resampled", lambda: ResampledPairs("train"))
+    prep = {"background": config["background"], "ink": config["ink"], "crop": config["crop"]}
+    suffix = "_" + "_".join(f"{key}={value}" for key, value in prep.items())
+
+    if config["resample"] and config["skilled_train"]:
+        train_set = get_dataset("train_resampled" + suffix, lambda: ResampledPairs("train", **prep))
+    elif config["resample"]:
+        train_set = get_dataset("train_bez_wykw" + suffix,
+                                lambda: ResampledPairs("train", **prep, skilled_per_writer=0, random_per_writer=48))
     else:
-        train_set = get_dataset("train_fixed", lambda: SignaturePairs("train"))
-    val_all = get_dataset("val_all", lambda: SignaturePairs("val"))
-    val_skilled = get_dataset("val_skilled", lambda: SignaturePairs("val", ("genuine", "skilled")))
-    test_skilled = get_dataset("test_skilled", lambda: SignaturePairs("test", ("genuine", "skilled")))
-    test_random = get_dataset("test_random", lambda: SignaturePairs("test", ("genuine", "random")))
+        train_set = get_dataset("train_fixed" + suffix, lambda: SignaturePairs("train", **prep))
+    train_set.transform = make_augmentation(config["thickness"]) if config["augment"] else None
+
+    if config["skilled_val"]:
+        val_types, threshold_types = ("genuine", "skilled", "random"), ("genuine", "skilled")
+    else:
+        val_types, threshold_types = ("genuine", "random"), ("genuine", "random")
+    val_select = get_dataset("val_" + "_".join(val_types) + suffix,
+                             lambda: SignaturePairs("val", val_types, **prep))
+    val_threshold = get_dataset("val_" + "_".join(threshold_types) + suffix,
+                                lambda: SignaturePairs("val", threshold_types, **prep))
+    test_skilled = get_dataset("test_skilled" + suffix,
+                               lambda: SignaturePairs("test", ("genuine", "skilled"), **prep))
+    test_random = get_dataset("test_random" + suffix,
+                              lambda: SignaturePairs("test", ("genuine", "random"), **prep))
 
     train_loader = DataLoader(train_set, batch_size=config["batch_size"], shuffle=True)
     model = SignatureNet(config["embedding_dim"], config["dropout"]).to(DEVICE)
@@ -96,7 +121,7 @@ def run_experiment(name, seed, **overrides):
         if config["resample"]:
             train_set.resample(seed * 1000 + epoch)
         train_loss = train_one_epoch(model, train_loader, optimizer, config["margin"])
-        val_eer, _ = eer(*scores(model, val_all))
+        val_eer, _ = eer(*scores(model, val_select))
         history["train_loss"].append(train_loss)
         history["val_eer"].append(val_eer)
         if val_eer < best_eer:
@@ -104,7 +129,7 @@ def run_experiment(name, seed, **overrides):
             torch.save(model.state_dict(), model_path)
 
     model.load_state_dict(torch.load(model_path, map_location=DEVICE))
-    _, threshold = eer(*scores(model, val_skilled))
+    _, threshold = eer(*scores(model, val_threshold))
 
     result = {
         "data": datetime.now().strftime("%Y-%m-%d %H:%M"),

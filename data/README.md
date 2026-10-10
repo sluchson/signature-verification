@@ -1,1 +1,1 @@
-Folder przechowujacy surowe i przetworzone dane.
+Podpisy CEDAR (signatures/, poza gitem), podział osób i pliki z parami.
