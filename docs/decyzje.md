@@ -301,3 +301,18 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - najlepsze epoki głównie 18–30, czasem ostatnia, więc 30 epok może być trochę za mało
 - FAR wykwalifikowane od 9,8 do 37,1%, czyli próg wybrany na walidacji (10 osób) słabo przenosi się na test
 - decyzja: w rozdziale 5 jako główny wynik sieci podaję wynik z walidacji krzyżowej (20,4 ± 3,1 / 13,6 ± 2,4), a wyniki z jednego podziału zostają do porównywania wariantów między sobą
+
+## Metoda bazowa na częściach walidacji krzyżowej
+
+- po co: porównać sieć i metodę bazową na dokładnie tych samych parach testowych
+- jak: korelacja pikseli po pełnym przygotowaniu (tło, atrament, crop none, 128x256), te same pary co w walidacji krzyżowej (seed 123), próg z walidacji (prawdziwe + wykwalifikowane)
+- przewidywanie: wykwalifikowane 35–40%, losowe 30–33%
+- wynik (średnia ± odchylenie z 5 części):
+  - EER wykwalifikowane 39,0% ± 3,1 (od 34,8 do 43,2)
+  - EER losowe 32,7% ± 3,0 (od 29,9 do 37,9)
+- zgadza się z notebookiem 02 (38,0 / 32,0 na wszystkich parach)
+- sieć wygrywa w każdej części: 20,4 vs 39,0 (wykwalifikowane), 13,6 vs 32,7 (losowe), czyli EER mniej więcej o połowę niższy
+- najgorszy trening sieci (25,8%) lepszy niż najlepsza część metody bazowej (34,8%)
+- trudne części są inne dla sieci i dla korelacji (część 1: sieć 16,5, korelacja 41,3; część 2: sieć 22,7, korelacja 34,8)
+- próg z walidacji tu też słabo się przenosi (FRR 42,6% vs FAR 34,4%, FRR od 24,6 do 54,7)
+- w pracy: odchylenie bazowej z 5 wartości, sieci z 15 (5 części x 3 seedy)
