@@ -32,6 +32,7 @@ DEFAULTS = {
     "skilled_train": True,
     "skilled_val": True,
     "crop": "none",
+    "size": (128, 256),
 }
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -83,7 +84,7 @@ def run_experiment(name, seed, **overrides):
         raise ValueError("trening bez fałszerstw działa tylko z resample=True")
     set_seed(seed)
 
-    prep = {"background": config["background"], "ink": config["ink"], "crop": config["crop"]}
+    prep = {"background": config["background"], "ink": config["ink"], "crop": config["crop"], "size": config["size"]}
     suffix = "_" + "_".join(f"{key}={value}" for key, value in prep.items())
 
     if config["resample"] and config["skilled_train"]:

@@ -265,3 +265,20 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - ten wpis zastępuje decyzje z wpisów „Przycinanie do samego podpisu” i „Przygotowanie obrazów” (kolejność kroków, uzasadnienie 128×256)
 - usunięty zdublowany wiersz crop_none seed 1 z CSV
 - notebooki `02_przygotowanie_obrazow.ipynb` (kadr), `04_eksperymenty.ipynb` (trening)
+
+## Październik 2026 — Eksperyment: rozmiar wejścia
+- do `train.py` dodane ustawienie `size` (domyślnie 128×256), przekazywane do `preprocess()`
+- sieć działa dla każdego rozmiaru bez zmian, bo `AdaptiveAvgPool2d((2, 4))` zawsze daje siatkę 2×4 przed warstwą liniową
+- warianty: 64×128, 128×216 (proporcja ok. 1,7 jak całe obrazy, bez białych pasów), 256×512; porównanie z `crop_none` (128×256)
+- przewidywanie przed treningiem: 64×128 gorszy, 128×216 podobny, 256×512 może trochę lepszy
+- 128×256: walidacja 13,5% ± 0,9, wykwalifikowane 17,2% ± 0,5, losowe 12,5% ± 1,2 (ok. 9 min na trening)
+- 64×128: walidacja 16,9% ± 1,1, wykwalifikowane 16,9% ± 1,9, losowe 13,7% ± 1,3 (ok. 3 min)
+- 128×216: walidacja 14,1% ± 0,4, wykwalifikowane 16,6% ± 1,8, losowe 15,2% ± 1,3 (ok. 7 min)
+- 256×512: walidacja 11,7% ± 0,6, wykwalifikowane 19,2% ± 1,8, losowe 12,9% ± 1,6 (ok. 70 min, najlepsze epoki 19–28)
+- na fałszerstwach rozmiar prawie nic nie zmienia, mały obraz wystarcza; przewidywanie dla 64×128 się nie sprawdziło
+- 64×128 i 128×216 gorsze na walidacji; 128×216 gorszy na losowych o 2,7 pkt, powód nieznany (może nierówny podział mapy cech o szerokości 13 w `AdaptiveAvgPool2d`, nie sprawdzone)
+- 256×512 najlepszy na walidacji przy każdym seedzie, ale na teście gorszy na fałszerstwach o 2 pkt
+- walidacja i test wskazują co innego, czyli 10 osób w walidacji to za mało do wyboru między wariantami różniącymi się o 1–2 pkt; kolejny argument za walidacją krzyżową
+- decyzja: zostaje 128×256, mimo lepszej walidacji 256×512, bo przewaga nie potwierdziła się na teście, a trening jest ponad 8 razy dłuższy (walidacja krzyżowa: ok. 17 h zamiast ok. 2,5 h)
+- białe pasy po bokach całych obrazów nie szkodzą
+- notebook `04_eksperymenty.ipynb`

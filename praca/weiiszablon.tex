@@ -54,6 +54,8 @@
 	\item[CSV] ang. \textit{comma-separated values} -- format pliku tekstowego z~wartościami rozdzielonymi przecinkami
 	\item[EER] ang. \textit{equal error rate} -- równy współczynnik błędów
 	\item[MD5] ang. \textit{Message Digest 5} -- algorytm obliczania skrótu pliku
+	\item[CNN] ang. \textit{convolutional neural network} -- splotowa sieć neuronowa
+	\item[ReLU] ang. \textit{rectified linear unit} -- funkcja aktywacji zwracająca wartość wejścia dla wartości dodatnich i~zero dla ujemnych
 	\item[RGBA] ang. \textit{red, green, blue, alpha} -- zapis obrazu w~trzech kanałach koloru i~kanale przezroczystości
 \end{description}
 
@@ -356,7 +358,17 @@ Różnica nie zniknęła całkowicie, co prawdopodobnie wynika z~różnej grubo�
 
 \subsubsection*{Dopasowanie do rozmiaru wejścia}
 
-% TODO: uzupełnić po eksperymencie z~rozmiarem wejścia
+Jako rozmiar wejścia sieci przyjęto 128~$\times$~256 pikseli (wysokość~$\times$~szerokość).
+Obraz jest zmniejszany lub powiększany z~zachowaniem proporcji tak, aby zmieścił się w~tym prostokącie, a~wolne miejsce jest dopełniane białym tłem.
+Obraz znajduje się w~środku wejścia sieci.
+Proporcji nie zmieniano, ponieważ rozciągnięcie obrazu zmieniłoby kształt liter, inaczej niż w~pracy \cite{dey2017}, w~której wszystkie obrazy skalowano do jednego rozmiaru bez zachowania proporcji.
+Przy zmniejszaniu użyto interpolacji \texttt{INTER\_AREA}, która uśrednia piksele i~nie gubi cienkich kresek.
+
+Rozmiar wejścia wybrano na podstawie porównania czterech wariantów: 64~$\times$~128, 128~$\times$~216, 128~$\times$~256 i~256~$\times$~512 pikseli, opisanego w~rozdziale~\ref{Sec:wyniki}.
+Wariant 128~$\times$~216 ma proporcję około 1,7, taką jak całe obrazy (podrozdział~\ref{Subsec:eksploracja}), więc nie powstają w~nim białe pasy po bokach, jednak nie dał on poprawy.
+Mniejsze wejście 64~$\times$~128 dało większy błąd na zbiorze walidacyjnym.
+Wejście 256~$\times$~512 dało mniejszy błąd na zbiorze walidacyjnym, ale nie na zbiorze testowym, a~jeden trening trwał ponad osiem razy dłużej, dlatego pozostano przy rozmiarze 128~$\times$~256.
+
 Jako rozmiar wejścia sieci przyjęto 128~$\times$~256 pikseli (wysokość~$\times$~szerokość).
 Obraz jest zmniejszany lub powiększany z~zachowaniem proporcji tak, aby zmieścił się w~tym prostokącie, a~wolne miejsce jest dopełniane białym tłem.
 Obraz znajduje się w~środku wejścia sieci.
@@ -379,6 +391,99 @@ EER wyniósł 38,0\% dla fałszerstw wykwalifikowanych i~32,0\% dla fałszerstw 
 Przygotowanie obrazów nie ułatwia więc zadania prostej metodzie, która nadal myli się w~około jednej trzeciej przypadków.
 Gdy obrazy dodatkowo przycinano do prostokąta zawierającego podpis, EER dla fałszerstw wykwalifikowanych wzrastał do 42,1\%.
 Wskazuje to, że położenie i~rozmiar podpisu na obrazie niosą pewną informację przydatną do wykrywania fałszerstw, co omówiono w~rozdziale~\ref{Sec:wyniki}.
+
+\subsection{Budowa sieci syjamskiej}
+\label{Subsec:siec}
+
+Sieć syjamska składa się z~dwóch jednakowych gałęzi, które mają wspólne wagi \cite{bromley1993}.
+Każda gałąź zamienia obraz podpisu na wektor liczb, nazywany wektorem cech, a~następnie obliczana jest odległość między wektorami obu podpisów.
+Dzięki wspólnym wagom oba podpisy są przetwarzane w~dokładnie ten sam sposób, a~w~implementacji wystarczy jedna sieć, przez którą kolejno przechodzą oba obrazy pary.
+
+Gałąź sieci jest splotową siecią neuronową (ang. \textit{convolutional neural network}, CNN) złożoną z~czterech bloków.
+Każdy blok zawiera warstwę splotową, normalizację wsadową (ang. \textit{batch normalization}) \cite{ioffe2015}, funkcję aktywacji ReLU (ang. \textit{rectified linear unit} -- funkcja zwracająca wartość wejścia dla wartości dodatnich i~zero dla ujemnych) oraz warstwę łączącą (ang. \textit{max pooling}), która zmniejsza wysokość i~szerokość mapy cech dwukrotnie.
+Pierwsza warstwa splotowa ma filtry o~rozmiarze 5~$\times$~5, a~pozostałe 3~$\times$~3.
+Po czterech blokach mapy cech są uśredniane do siatki 2~$\times$~4, a~otrzymane 1024 wartości przechodzą przez warstwę porzucania (ang. \textit{dropout}) \cite{srivastava2014} i~warstwę w~pełni połączoną, która zwraca wektor cech o~długości 128.
+Wektor jest na końcu normalizowany do długości 1, dzięki czemu odległość między dwoma wektorami zawsze mieści się w~przedziale od 0 do 2.
+Budowę jednej gałęzi przedstawiono w~tabeli~\ref{Tab:siec}.
+
+\begin{table}[ht]
+\caption{Budowa jednej gałęzi sieci syjamskiej dla wejścia o~rozmiarze 128~$\times$~256}
+\centering
+	\begin{tabular}{|l|l|c|r|}
+		\hline
+		Warstwa & Parametry & Rozmiar wyjścia & Liczba wag \\
+		\hline
+		wejście & -- & 1~$\times$~128~$\times$~256 & -- \\
+		blok 1 & splot 5~$\times$~5, 32 filtry & 32~$\times$~64~$\times$~128 & 896 \\
+		blok 2 & splot 3~$\times$~3, 64 filtry & 64~$\times$~32~$\times$~64 & 18\,624 \\
+		blok 3 & splot 3~$\times$~3, 128 filtrów & 128~$\times$~16~$\times$~32 & 74\,112 \\
+		blok 4 & splot 3~$\times$~3, 128 filtrów & 128~$\times$~8~$\times$~16 & 147\,840 \\
+		uśrednianie & siatka 2~$\times$~4 & 1024 & -- \\
+		porzucanie & $p = 0{,}3$ & 1024 & -- \\
+		w~pełni połączona & 1024 $\rightarrow$ 128 & 128 & 131\,200 \\
+		normalizacja & długość wektora 1 & 128 & -- \\
+		\hline
+		razem & & & 372\,672 \\
+		\hline
+	\end{tabular}
+\label{Tab:siec}
+\end{table}
+
+Uśrednianie do stałej siatki 2~$\times$~4 sprawia, że liczba wartości przekazywanych do warstwy w~pełni połączonej nie zależy od rozmiaru obrazu wejściowego.
+Tę samą sieć można więc stosować bez zmian dla różnych rozmiarów wejścia, co wykorzystano w~rozdziale~\ref{Sec:wyniki}.
+Normalizacja wsadowa w~czasie treningu korzysta ze średniej i~wariancji obliczonych na bieżącej porcji danych, a~w~czasie oceny z~wartości uśrednionych podczas całego treningu \cite{ioffe2015}.
+Warstwa porzucania w~czasie treningu losowo wyłącza 30\% wartości, co utrudnia sieci zapamiętanie danych treningowych, a~w~czasie oceny jest nieaktywna \cite{srivastava2014}.
+
+Dla pary obrazów $x_1$ i~$x_2$ sieć zwraca odległość euklidesową między ich wektorami cech
+\begin{equation}
+	D = \lVert f(x_1) - f(x_2) \rVert_2,
+	\label{Eq:odleglosc}
+\end{equation}
+gdzie $f$ oznacza gałąź sieci.
+Mała odległość oznacza, że podpisy są podobne, a~duża, że się różnią.
+
+\subsection{Funkcja straty i~trening}
+\label{Subsec:trening}
+
+\subsubsection*{Funkcja straty}
+
+Sieć trenowano funkcją straty kontrastowej (ang. \textit{contrastive loss}) \cite{hadsell2006}.
+Dla pary o~etykiecie $y$ ($y = 1$ dla dwóch podpisów tej samej osoby i~$y = 0$ dla pary negatywnej) i~odległości $D$ ze wzoru (\ref{Eq:odleglosc}) strata wynosi
+\begin{equation}
+	L = y\,D^2 + (1 - y)\,\big(\max(0,\, m - D)\big)^2,
+	\label{Eq:strata}
+\end{equation}
+gdzie $m$ jest marginesem.
+Dla par pozytywnych strata rośnie wraz z~odległością, więc sieć uczy się zbliżać do siebie wektory podpisów tej samej osoby.
+Dla par negatywnych strata jest dodatnia tylko wtedy, gdy odległość jest mniejsza od marginesu, więc sieć oddala od siebie wektory różnych podpisów, ale nie dalej niż na odległość $m$.
+Bez składnika dla par negatywnych sieć mogłaby przypisać wszystkim obrazom ten sam wektor i~uzyskać zerową stratę \cite{hadsell2006}.
+Przyjęto margines $m = 1$, tak jak w~pracy \cite{dey2017}.
+W~porównaniu z~pracą \cite{hadsell2006} zamieniono oznaczenie etykiet i~pominięto czynnik $\frac{1}{2}$ przed oboma składnikami, co nie zmienia położenia minimum funkcji straty.
+
+\subsubsection*{Przebieg treningu}
+
+Do optymalizacji wag użyto algorytmu Adam \cite{kingma2015} z~krokiem uczenia 0,001, czyli wartością zalecaną przez autorów metody, oraz z~karą za duże wartości wag (ang. \textit{weight decay}) równą $10^{-4}$.
+Sieć trenowano przez 30 epok, w~porcjach po 32 pary.
+Na początku każdej epoki losowano nowe pary treningowe: dla każdej osoby 48 par pozytywnych, 24 pary z~fałszerstwem wykwalifikowanym i~24 pary losowe, w~taki sam sposób jak w~podrozdziale~\ref{Subsec:pary}.
+Dzięki temu w~kolejnych epokach sieć widzi różne połączenia podpisów, a~klasy pozostają równoliczne.
+Pary walidacyjne i~testowe były stałe.
+
+W~czasie treningu stosowano augmentację danych, czyli niewielkie losowe zmiany obrazów, które zwiększają różnorodność danych treningowych \cite{shorten2019}.
+Każdy obraz pary był niezależnie obracany o~kąt do $\pm5^\circ$, przesuwany o~maksymalnie 5\% szerokości i~wysokości oraz zmniejszany do 85--100\% rozmiaru, a~puste miejsca wypełniano wartością tła.
+Zastosowano tylko małe kąty obrotu, ponieważ duże obroty mogą zmienić znaczenie obrazu \cite{shorten2019}.
+Nie stosowano powiększania, które ucinało końce podpisów, ani pocieniania kresek, po którym znikały cienkie linie.
+Augmentację stosowano wyłącznie do zbioru treningowego.
+
+\subsubsection*{Wybór modelu i~progu}
+
+Po każdej epoce obliczano EER na wszystkich parach zbioru walidacyjnego i~zapisywano model z~epoki o~najmniejszym błędzie.
+Próg decyzyjny wyznaczano na zbiorze walidacyjnym, na parach pozytywnych i~parach z~fałszerstwami wykwalifikowanymi, w~punkcie równego współczynnika błędów.
+Zbiór testowy wykorzystywano tylko do końcowej oceny wybranego modelu.
+
+Każdy wariant trenowano trzykrotnie, z~różnymi ziarnami generatora liczb losowych, które decydują o~początkowych wagach sieci, losowaniu par i~augmentacji.
+Wyniki podawane są jako średnia i~odchylenie standardowe z~trzech treningów.
+Sprawdzono, że ponowny trening z~tym samym ziarnem daje identyczny wynik.
+Sieć zaimplementowano w~bibliotece PyTorch i~trenowano na karcie graficznej NVIDIA GeForce RTX 4070 Laptop, a~jeden trening trwał około 9 minut.
 
 \section{Badania eksperymentalne i wyniki}
 \label{Sec:wyniki}
@@ -408,6 +513,11 @@ Wskazuje to, że położenie i~rozmiar podpisu na obrazie niosą pewną informac
 \bibitem{hafemann2017features} Hafemann L.G., Sabourin R., Oliveira L.S.: Learning Features for Offline Handwritten Signature Verification using Deep Convolutional Neural Networks. Pattern Recognition, vol.~70, 2017, str. 163--176.
 \bibitem{cedarkaggle} CEDAR Signature Dataset, \url{https://www.kaggle.com/datasets/shreelakshmigp/cedardataset}. Dostęp 29.09.2026.
 \bibitem{otsu1979} Otsu N.: A Threshold Selection Method from Gray-Level Histograms. IEEE Transactions on Systems, Man, and Cybernetics, vol.~SMC-9, nr~1, 1979, str.~62--66.
+\bibitem{ioffe2015} Ioffe S., Szegedy C.: Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift. Proceedings of the 32nd International Conference on Machine Learning (ICML), PMLR vol.~37, 2015, str.~448--456.
+\bibitem{srivastava2014} Srivastava N., Hinton G., Krizhevsky A., Sutskever I., Salakhutdinov R.: Dropout: A Simple Way to Prevent Neural Networks from Overfitting. Journal of Machine Learning Research, vol.~15, 2014, str.~1929--1958.
+\bibitem{hadsell2006} Hadsell R., Chopra S., LeCun Y.: Dimensionality Reduction by Learning an Invariant Mapping. IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2006, str.~1735--1742.
+\bibitem{kingma2015} Kingma D.P., Ba J.: Adam: A Method for Stochastic Optimization. International Conference on Learning Representations (ICLR), 2015.
+\bibitem{shorten2019} Shorten C., Khoshgoftaar T.M.: A survey on Image Data Augmentation for Deep Learning. Journal of Big Data, vol.~6, nr~60, 2019.
 
 \end{thebibliography}
 
