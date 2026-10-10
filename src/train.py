@@ -8,13 +8,15 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from src.dataset import SignaturePairs, ResampledPairs, make_augmentation
+from src.dataset import DATA_DIR, SignaturePairs, ResampledPairs, make_augmentation
 from src.model import SignatureNet, contrastive_loss
 from src.metrics import eer, far_frr
 
 ROOT = Path(__file__).resolve().parent.parent
 MODELS_DIR = ROOT / "models"
 RESULTS_FILE = ROOT / "results" / "experiments.csv"
+FOLDS_FILE = DATA_DIR / "cv_folds.json"
+EVAL_PAIRS_SEED = 123
 
 DEFAULTS = {
     "resample": True,
@@ -33,6 +35,7 @@ DEFAULTS = {
     "skilled_val": True,
     "crop": "none",
     "size": (128, 256),
+    "fold": None,
 }
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,6 +47,10 @@ def get_dataset(key, factory):
     if key not in _datasets:
         _datasets[key] = factory()
     return _datasets[key]
+
+
+def clear_cache():
+    _datasets.clear()
 
 
 def set_seed(seed):
@@ -78,15 +85,7 @@ def scores(model, dataset, batch_size=64):
     return s[lab == 1], s[lab == 0]
 
 
-def run_experiment(name, seed, **overrides):
-    config = {**DEFAULTS, **overrides}
-    if not config["resample"] and not config["skilled_train"]:
-        raise ValueError("trening bez fałszerstw działa tylko z resample=True")
-    set_seed(seed)
-
-    prep = {"background": config["background"], "ink": config["ink"], "crop": config["crop"], "size": config["size"]}
-    suffix = "_" + "_".join(f"{key}={value}" for key, value in prep.items())
-
+def fixed_split_datasets(config, prep, suffix):
     if config["resample"] and config["skilled_train"]:
         train_set = get_dataset("train_resampled" + suffix, lambda: ResampledPairs("train", **prep))
     elif config["resample"]:
@@ -94,7 +93,6 @@ def run_experiment(name, seed, **overrides):
                                 lambda: ResampledPairs("train", **prep, skilled_per_writer=0, random_per_writer=48))
     else:
         train_set = get_dataset("train_fixed" + suffix, lambda: SignaturePairs("train", **prep))
-    train_set.transform = make_augmentation(config["thickness"]) if config["augment"] else None
 
     if config["skilled_val"]:
         val_types, threshold_types = ("genuine", "skilled", "random"), ("genuine", "skilled")
@@ -108,6 +106,47 @@ def run_experiment(name, seed, **overrides):
                                lambda: SignaturePairs("test", ("genuine", "skilled"), **prep))
     test_random = get_dataset("test_random" + suffix,
                               lambda: SignaturePairs("test", ("genuine", "random"), **prep))
+    return train_set, val_select, val_threshold, test_skilled, test_random
+
+
+def fold_datasets(config, prep, suffix):
+    if not config["resample"]:
+        raise ValueError("walidacja krzyżowa działa tylko z resample=True")
+    with open(FOLDS_FILE) as f:
+        fold = json.load(f)[config["fold"]]
+    key = f"_fold{config['fold']}" + suffix
+
+    if config["skilled_train"]:
+        train_set = get_dataset("train" + key, lambda: ResampledPairs(writers=fold["train"], **prep))
+    else:
+        train_set = get_dataset("train_bez_wykw" + key,
+                                lambda: ResampledPairs(writers=fold["train"], **prep,
+                                                       skilled_per_writer=0, random_per_writer=48))
+    val_all = get_dataset("val" + key, lambda: ResampledPairs(writers=fold["val"], seed=EVAL_PAIRS_SEED, **prep))
+    test_all = get_dataset("test" + key, lambda: ResampledPairs(writers=fold["test"], seed=EVAL_PAIRS_SEED, **prep))
+
+    if config["skilled_val"]:
+        val_select, val_threshold = val_all, val_all.only(("genuine", "skilled"))
+    else:
+        val_select = val_threshold = val_all.only(("genuine", "random"))
+    return train_set, val_select, val_threshold, test_all.only(("genuine", "skilled")), test_all.only(("genuine", "random"))
+
+
+def run_experiment(name, seed, **overrides):
+    config = {**DEFAULTS, **overrides}
+    if not config["resample"] and not config["skilled_train"]:
+        raise ValueError("trening bez fałszerstw działa tylko z resample=True")
+    set_seed(seed)
+
+    prep = {"background": config["background"], "ink": config["ink"], "crop": config["crop"], "size": config["size"]}
+    suffix = "_" + "_".join(f"{key}={value}" for key, value in prep.items())
+
+    if config["fold"] is None:
+        datasets = fixed_split_datasets(config, prep, suffix)
+    else:
+        datasets = fold_datasets(config, prep, suffix)
+    train_set, val_select, val_threshold, test_skilled, test_random = datasets
+    train_set.transform = make_augmentation(config["thickness"]) if config["augment"] else None
 
     train_loader = DataLoader(train_set, batch_size=config["batch_size"], shuffle=True)
     model = SignatureNet(config["embedding_dim"], config["dropout"]).to(DEVICE)

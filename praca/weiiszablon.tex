@@ -51,10 +51,10 @@
 
 \begin{description}[leftmargin=2.5cm, labelwidth=2cm, labelsep=0.5cm, font=\normalfont]
 	\item[CEDAR] Center of Excellence for Document Analysis and Recognition -- ośrodek Uniwersytetu w~Buffalo, autor zbioru podpisów
+	\item[CNN] ang. \textit{convolutional neural network} -- splotowa sieć neuronowa	
 	\item[CSV] ang. \textit{comma-separated values} -- format pliku tekstowego z~wartościami rozdzielonymi przecinkami
 	\item[EER] ang. \textit{equal error rate} -- równy współczynnik błędów
 	\item[MD5] ang. \textit{Message Digest 5} -- algorytm obliczania skrótu pliku
-	\item[CNN] ang. \textit{convolutional neural network} -- splotowa sieć neuronowa
 	\item[ReLU] ang. \textit{rectified linear unit} -- funkcja aktywacji zwracająca wartość wejścia dla wartości dodatnich i~zero dla ujemnych
 	\item[RGBA] ang. \textit{red, green, blue, alpha} -- zapis obrazu w~trzech kanałach koloru i~kanale przezroczystości
 \end{description}
@@ -368,7 +368,6 @@ Rozmiar wejścia wybrano na podstawie porównania czterech wariantów: 64~$\time
 Wariant 128~$\times$~216 ma proporcję około 1,7, taką jak całe obrazy (podrozdział~\ref{Subsec:eksploracja}), więc nie powstają w~nim białe pasy po bokach, jednak nie dał on poprawy.
 Mniejsze wejście 64~$\times$~128 dało większy błąd na zbiorze walidacyjnym.
 Wejście 256~$\times$~512 dało mniejszy błąd na zbiorze walidacyjnym, ale nie na zbiorze testowym, a~jeden trening trwał ponad osiem razy dłużej, dlatego pozostano przy rozmiarze 128~$\times$~256.
-
 Jako rozmiar wejścia sieci przyjęto 128~$\times$~256 pikseli (wysokość~$\times$~szerokość).
 Obraz jest zmniejszany lub powiększany z~zachowaniem proporcji tak, aby zmieścił się w~tym prostokącie, a~wolne miejsce jest dopełniane białym tłem.
 Obraz znajduje się w~środku wejścia sieci.

@@ -1,3 +1,4 @@
+import copy
 import csv
 import itertools
 import json
@@ -35,6 +36,13 @@ def load_image(file_name, **prep):
     return to_tensor(preprocess(image_path(file_name), **prep))
 
 
+def pair_type(pair):
+    file_a, file_b, label = pair
+    if label == 1.0:
+        return "genuine"
+    return "skilled" if file_b.startswith("forgeries") else "random"
+
+
 class SignaturePairs(Dataset):
     transform = None
 
@@ -63,21 +71,29 @@ class SignaturePairs(Dataset):
             a, b = self.transform(a), self.transform(b)
         return a, b, torch.tensor(label)
 
+    def only(self, pair_types):
+        part = copy.copy(self)
+        part.pairs = [p for p in self.pairs if pair_type(p) in pair_types]
+        return part
+
 
 def files_of(writer, kind):
     return [f"{kind}_{writer}_{i}.png" for i in range(1, 25)]
 
 
 class ResampledPairs(SignaturePairs):
-    def __init__(self, split, genuine_per_writer=48, skilled_per_writer=24, random_per_writer=24, **prep):
-        with open(DATA_DIR / "writer_split.json") as f:
-            self.writers = json.load(f)[split]
+    def __init__(self, split=None, genuine_per_writer=48, skilled_per_writer=24, random_per_writer=24,
+                 writers=None, seed=0, **prep):
+        if writers is None:
+            with open(DATA_DIR / "writer_split.json") as f:
+                writers = json.load(f)[split]
+        self.writers = list(writers)
         self.counts = (genuine_per_writer, skilled_per_writer, random_per_writer)
         self.images = {}
         for writer in self.writers:
             for name in files_of(writer, "original") + files_of(writer, "forgeries"):
                 self.images[name] = load_image(name, **prep)
-        self.resample(0)
+        self.resample(seed)
 
     def resample(self, seed):
         rng = random.Random(seed)

@@ -282,3 +282,22 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - decyzja: zostaje 128×256, mimo lepszej walidacji 256×512, bo przewaga nie potwierdziła się na teście, a trening jest ponad 8 razy dłuższy (walidacja krzyżowa: ok. 17 h zamiast ok. 2,5 h)
 - białe pasy po bokach całych obrazów nie szkodzą
 - notebook `04_eksperymenty.ipynb`
+
+## Walidacja krzyżowa
+
+- po co: w eksperymencie z rozmiarem wejścia walidacja i test pokazywały co innego, a test to tylko 10 osób, więc nie wiadomo było, ile wynik zależy od tego, kto trafił do testu
+- jak: 55 osób podzielone na 5 części po 11 (seed 42, plik data/cv_folds.json); każda część raz jest testem, 10 osób walidacja, 34 trening
+- pary walidacyjne i testowe losowane raz (seed 123), treningowe co epokę jak wcześniej
+- ustawienia: aktualne DEFAULTS (crop none, 128x256, augmentacja geometryczna, usuwanie tła, wyrównanie atramentu)
+- 5 części x 3 seedy = 15 treningów, ok. 141 min
+- wynik (średnia ± odchylenie z 15 treningów):
+  - EER wykwalifikowane 20,4% ± 3,1 (od 15,5 do 25,8)
+  - EER losowe 13,6% ± 2,4 (od 9,5 do 17,8)
+  - EER walidacja 12,1% ± 1,6
+- średnie części (wykw. / losowe): 23,1/14,5, 16,5/16,7, 22,7/10,0, 18,9/13,9, 20,9/12,9
+- na starym podziale było 17,2 ± 0,5, czyli stary podział był łatwiejszy niż przeciętny
+- wybór osób do testu zmienia wynik bardziej niż seed (ok. 2,4 pkt vs ok. 1,4 pkt), ale seed w niektórych częściach też dużo zmienia (część 2: 17,7–25,8)
+- część 4 to prawie stary test, a wychodzi 20,9 zamiast 17,2 (inna liczba osób w teście, inne osoby w walidacji, losowane pary zamiast CSV)
+- najlepsze epoki głównie 18–30, czasem ostatnia, więc 30 epok może być trochę za mało
+- FAR wykwalifikowane od 9,8 do 37,1%, czyli próg wybrany na walidacji (10 osób) słabo przenosi się na test
+- decyzja: w rozdziale 5 jako główny wynik sieci podaję wynik z walidacji krzyżowej (20,4 ± 3,1 / 13,6 ± 2,4), a wyniki z jednego podziału zostają do porównywania wariantów między sobą

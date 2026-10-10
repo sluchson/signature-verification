@@ -7,6 +7,7 @@ data/*
 !data/README.md
 !data/writer_split.json
 !data/*_pairs.csv
+!data/cv_folds.json
 
 models/*
 !models/README.md
