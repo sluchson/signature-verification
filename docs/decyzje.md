@@ -316,3 +316,24 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - trudne części są inne dla sieci i dla korelacji (część 1: sieć 16,5, korelacja 41,3; część 2: sieć 22,7, korelacja 34,8)
 - próg z walidacji tu też słabo się przenosi (FRR 42,6% vs FAR 34,4%, FRR od 24,6 do 54,7)
 - w pracy: odchylenie bazowej z 5 wartości, sieci z 15 (5 części x 3 seedy)
+
+## Październik 2026 — Eksperyment: 50 epok zamiast 30
+
+- po co: w walidacji krzyżowej najlepsze epoki wypadały głównie między 18 a 30, czasem w ostatniej
+- jak: ta sama walidacja krzyżowa (5 części x 3 seedy), tylko `epochs=50`; nazwy cv50_fold0–4; przebieg każdej epoki zapisany w results/cv50_historia.json
+- trening powtarzalny, więc pierwsze 30 epok identyczne jak wcześniej; zmienia się wynik tylko tam, gdzie najlepsza epoka wypada po 30.
+- sprawdzenie: 4 treningi z najlepszą epoką ≤ 30 dały wynik identyczny co do cyfry jak przy 30 epokach
+- przewidywanie: 5–8 z 15 treningów z najlepszą epoką po 30., val niżej o ok. 0,5 pkt, test bez wyraźnej zmiany
+- wynik: najlepsza epoka po 30. w 11 z 15 treningów (więcej niż przewidywałem)
+  - val EER 12,1 ± 1,6 → 10,7 ± 1,5 (lepiej w 11, gorzej w 0)
+  - EER wykwalifikowane 20,4 ± 3,1 → 19,4 ± 3,5 (lepiej w 8, gorzej w 2)
+  - EER losowe 13,6 ± 2,4 → 12,0 ± 1,8 (lepiej w 10, gorzej w 1)
+- średnie części przy 50 epokach (wykw. / losowe): 22,6/13,1, 17,3/13,4, 21,8/9,9, 15,5/10,9, 19,9/12,6
+- średni val EER w blokach po 5 epok: 36–40: 13,7, 41–45: 13,3, 46–50: 13,4, czyli od ok. 40. epoki płasko; w części 0 i 4 po 40. epoce val nawet rośnie, a strata treningowa dalej spada
+- więcej niż 50 epok nie ma sensu (krzywa płaska, a trening ok. 1,7 raza dłuższy niż przy 30)
+- trening przerwał się raz w nocy (część 1 seed 3); komórka pomija gotowe treningi (sprawdza plik z historią), więc dokończenie nie zrobiło duplikatów
+- decyzja: model końcowy trenowany 50 epok; główny wynik sieci w pracy: 19,4 ± 3,5 (wykwalifikowane), 12,0 ± 1,8 (losowe)
+- wcześniejsze eksperymenty (30 epok) zostają ważne, bo warianty porównywane były przy tej samej liczbie epok
+- DEFAULTS w train.py zostaje 30 (zgodność ze starymi komórkami), dalsze treningi z `epochs=50` jawnie
+- do zrobienia: poprawić opis liczby epok w rozdz. 4.3
+- notebook `04_eksperymenty.ipynb`
