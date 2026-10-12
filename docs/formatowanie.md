@@ -36,7 +36,6 @@ Promotor sam pisze, że trzeba uwzględnić wymagania wydziału, więc przy ró�
 - wydrukować, przeczytać na papierze
 - dać komuś do sprawdzenia pod kątem językowym
 - czcionka Times New Roman na rysunkach `cedar_przyklad.png` i `tlo_histogram.png` (notebook 01), podpisy osi na `tlo_histogram` po zmniejszeniu mają ok. 7,7 pkt, a minimum to 8
-- rozdz. 4 ma na razie tylko podrozdział 4.1, dojdą 4.2 (sieć) i 4.3 (trening)
 
 ## Pytania do promotora
 - czy Wprowadzenie i Podsumowanie mają mieć numer (szablon WEII numeruje)

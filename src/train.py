@@ -36,6 +36,7 @@ DEFAULTS = {
     "crop": "none",
     "size": (128, 256),
     "fold": None,
+    "lr_schedule": None,
 }
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -151,6 +152,13 @@ def run_experiment(name, seed, **overrides):
     train_loader = DataLoader(train_set, batch_size=config["batch_size"], shuffle=True)
     model = SignatureNet(config["embedding_dim"], config["dropout"]).to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
+    
+    if config["lr_schedule"] is None:
+        scheduler = None
+    elif config["lr_schedule"] == "cosine":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config["epochs"])
+    else:
+        raise ValueError(f"nieznany lr_schedule: {config['lr_schedule']}")
 
     MODELS_DIR.mkdir(exist_ok=True)
     model_path = MODELS_DIR / f"{name}_seed{seed}.pt"
@@ -161,6 +169,8 @@ def run_experiment(name, seed, **overrides):
         if config["resample"]:
             train_set.resample(seed * 1000 + epoch)
         train_loss = train_one_epoch(model, train_loader, optimizer, config["margin"])
+        if scheduler is not None:
+            scheduler.step()
         val_eer, _ = eer(*scores(model, val_select))
         history["train_loss"].append(train_loss)
         history["val_eer"].append(val_eer)

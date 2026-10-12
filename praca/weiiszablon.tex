@@ -16,6 +16,7 @@
 \DeclareSymbolFont{symbols}{OMS}{ztmcm}{m}{n}
 \DeclareSymbolFont{largesymbols}{OMX}{ztmcm}{m}{n}
 \usepackage[section]{placeins}
+\usepackage{multirow}
 
 \author{Maciej Pereślucha}
 \studentID{EF-177139}
@@ -45,7 +46,7 @@
 \cleardoublepage
 
 
-% Wykaz uzupełniać na bieżąco, alfabetycznie (później dojdą m.in. CNN, FAR, FRR)
+% Wykaz uzupełniać na bieżąco, alfabetycznie 
 \section*{Wykaz symboli, oznaczeń i skrótów}
 \addcontentsline{toc}{section}{Wykaz symboli, oznaczeń i skrótów}
 
@@ -54,6 +55,8 @@
 	\item[CNN] ang. \textit{convolutional neural network} -- splotowa sieć neuronowa	
 	\item[CSV] ang. \textit{comma-separated values} -- format pliku tekstowego z~wartościami rozdzielonymi przecinkami
 	\item[EER] ang. \textit{equal error rate} -- równy współczynnik błędów
+	\item[FAR] ang. \textit{false acceptance rate} -- współczynnik błędnych akceptacji
+	\item[FRR] ang. \textit{false rejection rate} -- współczynnik błędnych odrzuceń
 	\item[MD5] ang. \textit{Message Digest 5} -- algorytm obliczania skrótu pliku
 	\item[ReLU] ang. \textit{rectified linear unit} -- funkcja aktywacji zwracająca wartość wejścia dla wartości dodatnich i~zero dla ujemnych
 	\item[RGBA] ang. \textit{red, green, blue, alpha} -- zapis obrazu w~trzech kanałach koloru i~kanale przezroczystości
@@ -239,6 +242,7 @@ Liczbę podpisów w~każdym ze zbiorów przedstawiono w~tabeli \ref{Tab:podzial}
 Zbiór treningowy służy do uczenia sieci, zbiór walidacyjny do wyboru progu decyzyjnego i~porównywania wariantów modelu, a~zbiór testowy wyłącznie do końcowej oceny.
 Żadna osoba nie występuje w~więcej niż jednym zbiorze, więc wynik na zbiorze testowym pokazuje, jak model radzi sobie z~podpisami osób, których wcześniej nie widział.
 Losowanie wykonano z~ustalonym ziarnem generatora liczb losowych (ang. \textit{seed}), a~wynik podziału zapisano w~pliku, dzięki czemu podział jest za każdym razem taki sam i~wszystkie eksperymenty korzystają z~tych samych grup osób.
+Ostateczną skuteczność modelu oceniono dodatkowo walidacją krzyżową, w~której każda osoba raz należy do zbioru testowego (podrozdział~\ref{Subsec:cv}).
 
 W~literaturze stosowane są różne sposoby podziału zbioru CEDAR.
 Na przykład w~pracy \cite{dey2017} do treningu użyto 50 osób, a~do testu 5.
@@ -364,18 +368,11 @@ Obraz znajduje się w~środku wejścia sieci.
 Proporcji nie zmieniano, ponieważ rozciągnięcie obrazu zmieniłoby kształt liter, inaczej niż w~pracy \cite{dey2017}, w~której wszystkie obrazy skalowano do jednego rozmiaru bez zachowania proporcji.
 Przy zmniejszaniu użyto interpolacji \texttt{INTER\_AREA}, która uśrednia piksele i~nie gubi cienkich kresek.
 
+Proporcję 1:2 dobrano na początku prac do obrazów przyciętych do podpisu, dla których mediana stosunku szerokości do wysokości wynosiła około 2,1.
 Rozmiar wejścia wybrano na podstawie porównania czterech wariantów: 64~$\times$~128, 128~$\times$~216, 128~$\times$~256 i~256~$\times$~512 pikseli, opisanego w~rozdziale~\ref{Sec:wyniki}.
 Wariant 128~$\times$~216 ma proporcję około 1,7, taką jak całe obrazy (podrozdział~\ref{Subsec:eksploracja}), więc nie powstają w~nim białe pasy po bokach, jednak nie dał on poprawy.
 Mniejsze wejście 64~$\times$~128 dało większy błąd na zbiorze walidacyjnym.
 Wejście 256~$\times$~512 dało mniejszy błąd na zbiorze walidacyjnym, ale nie na zbiorze testowym, a~jeden trening trwał ponad osiem razy dłużej, dlatego pozostano przy rozmiarze 128~$\times$~256.
-Jako rozmiar wejścia sieci przyjęto 128~$\times$~256 pikseli (wysokość~$\times$~szerokość).
-Obraz jest zmniejszany lub powiększany z~zachowaniem proporcji tak, aby zmieścił się w~tym prostokącie, a~wolne miejsce jest dopełniane białym tłem.
-Obraz znajduje się w~środku wejścia sieci.
-Proporcji nie zmieniano, ponieważ rozciągnięcie obrazu zmieniłoby kształt liter, inaczej niż w~pracy \cite{dey2017}, w~której wszystkie obrazy skalowano do jednego rozmiaru bez zachowania proporcji.
-Proporcję 1:2 dobrano na początku prac do obrazów przyciętych do podpisu, dla których mediana stosunku szerokości do wysokości wynosiła około 2,1.
-Całe obrazy mają proporcję około 1,7 (podrozdział~\ref{Subsec:eksploracja}), więc po ich bokach pozostają wąskie białe pasy.
-Wpływ rozmiaru wejścia na wyniki zbadano w~rozdziale~\ref{Sec:wyniki}.
-Przy zmniejszaniu użyto interpolacji \texttt{INTER\_AREA}, która uśrednia piksele i~nie gubi cienkich kresek.
 
 \subsubsection*{Odwrócenie jasności}
 
@@ -389,7 +386,7 @@ Prosta metoda porównawcza z~podrozdziału \ref{Subsec:eksploracja} została pow
 EER wyniósł 38,0\% dla fałszerstw wykwalifikowanych i~32,0\% dla fałszerstw losowych, czyli prawie tyle samo co dla obrazów nieprzetworzonych (38,0\% i~32,3\%).
 Przygotowanie obrazów nie ułatwia więc zadania prostej metodzie, która nadal myli się w~około jednej trzeciej przypadków.
 Gdy obrazy dodatkowo przycinano do prostokąta zawierającego podpis, EER dla fałszerstw wykwalifikowanych wzrastał do 42,1\%.
-Wskazuje to, że położenie i~rozmiar podpisu na obrazie niosą pewną informację przydatną do wykrywania fałszerstw, co omówiono w~rozdziale~\ref{Sec:wyniki}.
+Wskazuje to, że przycinanie usuwa część informacji przydatnej do wykrywania fałszerstw, co omówiono w~podrozdziale~\ref{Subsec:warianty}.
 
 \subsection{Budowa sieci syjamskiej}
 \label{Subsec:siec}
@@ -462,7 +459,8 @@ W~porównaniu z~pracą \cite{hadsell2006} zamieniono oznaczenie etykiet i~pomini
 \subsubsection*{Przebieg treningu}
 
 Do optymalizacji wag użyto algorytmu Adam \cite{kingma2015} z~krokiem uczenia 0,001, czyli wartością zalecaną przez autorów metody, oraz z~karą za duże wartości wag (ang. \textit{weight decay}) równą $10^{-4}$.
-Sieć trenowano przez 30 epok, w~porcjach po 32 pary.
+Sieć trenowano w~porcjach po 32 pary.
+W~eksperymentach porównujących warianty modelu trening trwał 30 epok, a~model końcowy trenowano przez 50 epok, co uzasadniono w~podrozdziale~\ref{Subsec:cv}.
 Na początku każdej epoki losowano nowe pary treningowe: dla każdej osoby 48 par pozytywnych, 24 pary z~fałszerstwem wykwalifikowanym i~24 pary losowe, w~taki sam sposób jak w~podrozdziale~\ref{Subsec:pary}.
 Dzięki temu w~kolejnych epokach sieć widzi różne połączenia podpisów, a~klasy pozostają równoliczne.
 Pary walidacyjne i~testowe były stałe.
@@ -482,10 +480,307 @@ Zbiór testowy wykorzystywano tylko do końcowej oceny wybranego modelu.
 Każdy wariant trenowano trzykrotnie, z~różnymi ziarnami generatora liczb losowych, które decydują o~początkowych wagach sieci, losowaniu par i~augmentacji.
 Wyniki podawane są jako średnia i~odchylenie standardowe z~trzech treningów.
 Sprawdzono, że ponowny trening z~tym samym ziarnem daje identyczny wynik.
-Sieć zaimplementowano w~bibliotece PyTorch i~trenowano na karcie graficznej NVIDIA GeForce RTX 4070 Laptop, a~jeden trening trwał około 9 minut.
+Sieć zaimplementowano w~bibliotece PyTorch i~trenowano na karcie graficznej NVIDIA GeForce RTX 4070 Laptop, a~jeden trening przez 30 epok trwał około 9 minut.
 
 \section{Badania eksperymentalne i wyniki}
 \label{Sec:wyniki}
+
+W~rozdziale przedstawiono wyniki badań przeprowadzonych z~użyciem sieci opisanej w~rozdziale~\ref{Sec:model}.
+Najpierw opisano miary oceny i~sposób prowadzenia badań.
+Następnie porównano warianty przygotowania danych i~treningu oraz zbadano, jak na wynik wpływają różnice między podpisami prawdziwymi a~fałszerstwami, które nie dotyczą kształtu podpisu.
+Na końcu przedstawiono ocenę końcowego modelu walidacją krzyżową oraz porównanie z~wynikami innych autorów.
+
+\subsection{Miary oceny i~przebieg badań}
+\label{Subsec:metodyka}
+
+\subsubsection*{Miary oceny}
+
+Dla każdej pary podpisów sieć zwraca odległość $D$ ze wzoru (\ref{Eq:odleglosc}).
+Para jest uznawana za parę podpisów tej samej osoby, gdy odległość nie przekracza progu decyzyjnego $t$.
+System może popełnić dwa rodzaje błędów: zaakceptować parę negatywną albo odrzucić parę pozytywną.
+Opisują je współczynnik błędnych akceptacji FAR (ang. \textit{false acceptance rate}) i~współczynnik błędnych odrzuceń FRR (ang. \textit{false rejection rate}) \cite{hafemann2017review}:
+\begin{equation}
+	\mathrm{FAR}(t) = \frac{N_{\mathrm{FA}}(t)}{N_{\mathrm{neg}}}, \qquad
+	\mathrm{FRR}(t) = \frac{N_{\mathrm{FR}}(t)}{N_{\mathrm{poz}}},
+	\label{Eq:far_frr}
+\end{equation}
+gdzie $N_{\mathrm{FA}}(t)$ oznacza liczbę par negatywnych błędnie zaakceptowanych przy progu $t$, $N_{\mathrm{FR}}(t)$ liczbę par pozytywnych błędnie odrzuconych, a~$N_{\mathrm{neg}}$ i~$N_{\mathrm{poz}}$ liczbę wszystkich par negatywnych i~pozytywnych.
+Zwiększenie progu zmniejsza FRR, ale zwiększa FAR, dlatego oba współczynniki zawsze podaje się razem.
+
+Główną miarą użytą w~pracy jest równy współczynnik błędów EER, czyli wartość, przy której FAR i~FRR są sobie równe \cite{hafemann2017review}.
+W~implementacji sprawdzane są kolejno wszystkie progi równe odległościom występującym w~danych, wybierany jest ten, dla którego różnica między FAR a~FRR jest najmniejsza, a~jako EER podawana jest średnia obu współczynników.
+EER nie zależy od wybranego wcześniej progu, dlatego nadaje się do porównywania wariantów modelu.
+Dodatkowo podawane są FAR i~FRR przy progu wyznaczonym na zbiorze walidacyjnym (podrozdział~\ref{Subsec:trening}), które pokazują, jak system działa, gdy próg trzeba ustalić przed oceną.
+
+EER obliczano osobno dla fałszerstw wykwalifikowanych (pary pozytywne i~pary z~fałszerstwem wykwalifikowanym) oraz dla fałszerstw losowych (pary pozytywne i~pary podpisów dwóch różnych osób).
+W~obu przypadkach używane są te same pary pozytywne i~ten sam próg, więc FRR przy progu z~walidacji jest dla obu rodzajów fałszerstw taki sam.
+
+\subsubsection*{Przebieg badań}
+
+Warianty modelu porównywano na podziale osób opisanym w~podrozdziale~\ref{Subsec:podzial}, w~którym zbiór testowy zawiera 480 par pozytywnych, 240 par z~fałszerstwami wykwalifikowanymi i~240 par z~fałszerstwami losowymi (tabela~\ref{Tab:pary}).
+W~każdym eksperymencie zmieniano tylko jedną rzecz, a~pozostałe ustawienia pozostawały takie, jak w~najlepszym dotychczasowym wariancie.
+Sieć trenowano przez 30 epok, w~sposób opisany w~podrozdziale~\ref{Subsec:trening}.
+
+Każdy wariant trenowano trzykrotnie, z~ziarnami generatora liczb losowych równymi 1, 2 i~3, a~wyniki podano jako średnią i~odchylenie standardowe z~trzech treningów.
+Pojedynczy trening okazał się niewystarczający.
+W~pierwszych sześciu treningach (dwa warianty, po trzy ziarna) EER dla fałszerstw wykwalifikowanych wynosił od 18,8\% do 28,6\%, a~różnica między wariantami była mniejsza niż różnica między ziarnami.
+Wcześniejsze porównanie tych samych wariantów na podstawie jednego treningu wskazywało poprawę o~3,3 punktu procentowego, która po powtórzeniu okazała się przypadkowa.
+
+Zbiór testowy zawiera tylko 10 osób, dlatego różnice między wariantami wynoszące 1--2 punkty procentowe nie są pewne.
+Z~tego powodu końcową ocenę modelu przeprowadzono dodatkowo walidacją krzyżową, opisaną w~podrozdziale~\ref{Subsec:cv}.
+
+\subsection{Porównanie wariantów modelu}
+\label{Subsec:warianty}
+
+Eksperymenty opisano w~kolejności, w~jakiej je wykonywano.
+Na początku obrazy były przycinane do prostokąta zawierającego podpis, dlatego eksperymenty dotyczące par treningowych i~augmentacji przeprowadzono z~przycinaniem, a~sposób wyboru obszaru obrazu porównano później.
+Wyniki wszystkich wariantów zestawiono w~tabeli~\ref{Tab:warianty}.
+
+\begin{table}[ht]
+\caption{Wyniki wariantów modelu na stałym podziale osób (EER w~procentach, średnia $\pm$ odchylenie standardowe z~trzech treningów; pierwsza grupa z~przycinaniem do podpisu, trzecia z~całym obrazem)}
+\centering
+	\begin{tabular}{|l|c|c|c|}
+		\hline
+		Wariant & Walidacja & Wykwalifikowane & Losowe \\
+		\hline
+		stałe pary, bez augmentacji & 18,8 $\pm$ 1,6 & 23,7 $\pm$ 3,8 & 16,5 $\pm$ 2,8 \\
+		nowe pary w~każdej epoce & 19,3 $\pm$ 2,2 & 24,6 $\pm$ 3,0 & 16,1 $\pm$ 1,4 \\
+		augmentacja geometryczna & 14,2 $\pm$ 0,8 & 20,3 $\pm$ 1,9 & 11,1 $\pm$ 0,6 \\
+		augmentacja z~pogrubianiem kresek & 14,9 $\pm$ 0,3 & 23,0 $\pm$ 2,0 & 13,5 $\pm$ 1,4 \\
+		\hline
+		cały obraz & 13,5 $\pm$ 0,9 & 17,2 $\pm$ 0,5 & 12,5 $\pm$ 1,2 \\
+		środek masy na dużym tle & 18,7 $\pm$ 0,7 & 26,2 $\pm$ 0,7 & 17,3 $\pm$ 3,1 \\
+		\hline
+		wejście 64~$\times$~128 & 16,9 $\pm$ 1,1 & 16,9 $\pm$ 1,9 & 13,7 $\pm$ 1,3 \\
+		wejście 128~$\times$~216 & 14,1 $\pm$ 0,4 & 16,6 $\pm$ 1,8 & 15,2 $\pm$ 1,3 \\
+		wejście 256~$\times$~512 & 11,7 $\pm$ 0,6 & 19,2 $\pm$ 1,8 & 12,9 $\pm$ 1,6 \\
+		\hline
+	\end{tabular}
+\label{Tab:warianty}
+\end{table}
+
+\subsubsection*{Losowanie nowych par w~każdej epoce}
+
+W~pierwszym wariancie sieć trenowano na stałych parach treningowych z~tabeli~\ref{Tab:pary}.
+W~drugim na początku każdej epoki losowano nowe pary, tak jak opisano w~podrozdziale~\ref{Subsec:trening}.
+Oba warianty trenowano bez augmentacji.
+Średni EER dla fałszerstw wykwalifikowanych wyniósł 23,7\% dla stałych par i~24,6\% dla nowych par, a~dla fałszerstw losowych odpowiednio 16,5\% i~16,1\%.
+Różnice są mniejsze niż rozrzut między ziarnami, więc losowanie nowych par nie dało wyraźnej poprawy.
+Pozostawiono je, ponieważ nie pogarszało wyników, a~pozwala wykorzystać w~treningu wszystkie fałszerstwa i~znacznie więcej połączeń podpisów prawdziwych niż stały zbiór par.
+W~obu wariantach najmniejszy błąd na zbiorze walidacyjnym występował już między 2. a~11. epoką, co oznacza, że bez augmentacji sieć szybko dopasowywała się do danych treningowych.
+
+\subsubsection*{Augmentacja danych}
+
+Augmentacja geometryczna opisana w~podrozdziale~\ref{Subsec:trening} zmniejszyła średni EER dla fałszerstw wykwalifikowanych z~24,6\% do 20,3\%, a~dla fałszerstw losowych z~16,1\% do 11,1\%.
+Poprawa wystąpiła przy każdym z~trzech ziaren, a~rozrzut między ziarnami zmalał.
+Najmniejszy błąd walidacyjny przypadał średnio na 11. epokę zamiast 6., czyli sieć później zaczynała dopasowywać się do danych treningowych.
+
+Sprawdzono również wariant, w~którym oprócz zmian geometrycznych kreski podpisu były z~prawdopodobieństwem 50\% pogrubiane o~jeden piksel.
+Pogrubianie pogorszyło wynik przy każdym ziarnie: średni EER dla fałszerstw wykwalifikowanych wzrósł do 23,0\%, a~dla losowych do 13,5\%.
+Przekształcenie zastosowane w~augmentacji powinno zachowywać informację potrzebną do rozpoznania etykiety \cite{shorten2019}.
+Pogarszający się wynik wskazuje, że grubość kresek niesie informację przydatną do odróżniania fałszerstw.
+Jest to zgodne z~obserwacją z~podrozdziału~\ref{Subsec:przygotowanie}, że po wyrównaniu ciemności atramentu podpisy prawdziwe i~fałszerstwa nadal różnią się prawdopodobnie grubością kresek.
+Na podstawie przeprowadzonych badań nie da się rozstrzygnąć, czy jest to cecha samych fałszerstw, czy wynik użycia innego długopisu podczas zbierania danych.
+W~dalszych badaniach stosowano tylko augmentację geometryczną.
+
+\subsubsection*{Wybór obszaru obrazu}
+
+Porównano trzy sposoby wyboru obszaru obrazu opisane w~podrozdziale~\ref{Subsec:przygotowanie}.
+Przed treningiem przewidywano, że najlepsze będzie przycinanie do podpisu, jednak najmniejszy błąd uzyskano dla całego obrazu.
+Średni EER dla fałszerstw wykwalifikowanych wyniósł 17,2\% wobec 20,3\% przy przycinaniu i~był mniejszy przy każdym ziarnie, natomiast dla fałszerstw losowych był nieco większy (12,5\% wobec 11,1\%).
+Umieszczenie podpisu na dużym tle według środka masy dało najgorszy wynik, 26,2\%.
+W~tym wariancie typowy podpis zajmuje na wejściu sieci obszar około 38~$\times$~91 pikseli, więc szczegóły kształtu zostają utracone.
+
+Ponieważ przy całym obrazie sieć widzi położenie i~rozmiar podpisu na kartce, sprawdzono, czy same te cechy pozwalają odróżnić fałszerstwa.
+Dla każdej pary obliczono różnicę jednej cechy między obydwoma obrazami i~potraktowano ją jako miarę podobieństwa.
+EER dla fałszerstw wykwalifikowanych wyniósł 49,3\% dla pionowego położenia środka podpisu, 47,0\% dla poziomego, 45,5\% dla wysokości podpisu, 43,8\% dla udziału prostokąta podpisu w~powierzchni obrazu i~42,1\% dla szerokości podpisu.
+Położenie podpisu nie niesie więc żadnej informacji o~fałszerstwie, a~jego rozmiar względem kartki tylko niewielką.
+Prawdopodobnym wyjaśnieniem przewagi całego obrazu jest to, że przy przycinaniu każdy podpis jest skalowany inaczej, przez co sieć traci informację o~jego rzeczywistym rozmiarze i~grubości kresek.
+Podobną zależność zaobserwowano dla prostej metody porównawczej, której EER przy przycinaniu wzrastał z~38,0\% do 42,1\% (podrozdział~\ref{Subsec:przygotowanie}).
+Hipotezy tej nie sprawdzono osobnym eksperymentem.
+W~dalszych badaniach stosowano cały obraz.
+
+\subsubsection*{Rozmiar wejścia}
+
+Dla całego obrazu porównano cztery rozmiary wejścia sieci, przy czym wynik dla rozmiaru 128~$\times$~256 odpowiada wierszowi ,,cały obraz'' w~tabeli~\ref{Tab:warianty}.
+Dzięki uśrednianiu do siatki 2~$\times$~4 (podrozdział~\ref{Subsec:siec}) we wszystkich przypadkach użyto tej samej sieci.
+Na fałszerstwach wykwalifikowanych rozmiar wejścia prawie nie wpływał na wynik, który wynosił od 16,6\% do 19,2\%, przy rozrzucie między ziarnami do 1,9 punktu procentowego.
+Wejście 256~$\times$~512 dało najmniejszy błąd na zbiorze walidacyjnym przy każdym ziarnie (11,7\% wobec 13,5\% dla 128~$\times$~256), ale na zbiorze testowym błąd dla fałszerstw wykwalifikowanych był o~2 punkty procentowe większy.
+Zbiór walidacyjny i~testowy wskazywały więc różne warianty, co pokazuje, że 10 osób nie wystarcza do wiarygodnego wyboru między wariantami różniącymi się o~1--2 punkty procentowe.
+Trening dla wejścia 256~$\times$~512 trwał około 70 minut zamiast 9, dlatego pozostawiono rozmiar 128~$\times$~256.
+
+\subsection{Wpływ różnic niezwiązanych z~kształtem podpisu}
+\label{Subsec:wycieki}
+
+W~podrozdziałach \ref{Subsec:eksploracja} i~\ref{Subsec:przygotowanie} pokazano, że podpisy prawdziwe i~fałszerstwa w~zbiorze CEDAR różnią się jasnością tła i~ciemnością atramentu.
+Aby sprawdzić, jak bardzo te różnice zawyżyłyby wyniki, sieć wytrenowano bez kroków, które je usuwają.
+W~wariancie bez usuwania tła pominięto również wyrównanie atramentu, ponieważ wymaga ono wcześniejszego usunięcia tła.
+Zbadano też, czy sieć potrzebuje fałszerstw wykwalifikowanych w~zbiorze treningowym.
+Wszystkie warianty trenowano z~augmentacją geometryczną i~przycinaniem do podpisu, a~wyniki porównano z~wariantem z~pełnym przygotowaniem obrazów.
+Zestawiono je w~tabeli~\ref{Tab:wycieki}.
+
+\begin{table}[ht]
+\caption{Wyniki wariantów bez usuwania tła, bez wyrównania atramentu i~bez fałszerstw wykwalifikowanych (w~procentach, średnia z~trzech treningów; FAR i~FRR przy progu z~walidacji)}
+\centering
+	\begin{tabular}{|l|c|c|c|c|c|}
+		\hline
+		\multirow{2}{*}{Wariant} & \multicolumn{2}{c|}{EER} & \multicolumn{2}{c|}{FAR} & \multirow{2}{*}{FRR} \\
+		\cline{2-5}
+		& wykw. & losowe & wykw. & losowe & \\
+		\hline
+		pełne przygotowanie & 20,3 & 11,1 & 26,8 & 8,2 & 14,5 \\
+		bez wyrównania atramentu & 20,0 & 12,6 & 29,9 & 13,9 & 13,1 \\
+		bez usuwania tła & 1,8 & 14,1 & 2,9 & 42,6 & 1,0 \\
+		\hline
+		bez fałszerstw w~treningu & 26,4 & 9,2 & 29,6 & 5,3 & 22,2 \\
+		bez fałszerstw w~ogóle & 27,8 & 10,5 & 64,4 & 15,6 & 3,9 \\
+		\hline
+	\end{tabular}
+\label{Tab:wycieki}
+\end{table}
+
+\subsubsection*{Jasność tła}
+
+Bez usuwania tła sieć osiągnęła EER dla fałszerstw wykwalifikowanych równy 1,8\% $\pm$ 0,7, czyli prawie bezbłędne wykrywanie fałszerstw.
+Jednocześnie wynik dla fałszerstw losowych pogorszył się z~11,1\% do 14,1\%, a~przy progu wyznaczonym na walidacji model akceptował 42,6\% par podpisów dwóch różnych osób, wobec 8,2\% przy pełnym przygotowaniu.
+Oznacza to, że sieć nauczyła się porównywać przede wszystkim jasność tła.
+Para z~fałszerstwem wykwalifikowanym zawsze zawiera jeden obraz z~ciemniejszym tłem i~jeden z~jaśniejszym, więc łatwo ją odrzucić, natomiast para dwóch podpisów prawdziwych różnych osób ma podobne tło i~często jest błędnie akceptowana.
+Model wydaje się więc bardzo dobry na fałszerstwach wykwalifikowanych, ale gorzej rozpoznaje, czy dwa podpisy należą do tej samej osoby.
+
+Takie zachowanie nazywa się w~literaturze uczeniem na skróty (ang. \textit{shortcut learning}).
+Sieć znajduje prostą regułę, która działa na danym zbiorze testowym, ale nie odpowiada rzeczywistemu zadaniu i~zawodzi w~innych warunkach \cite{geirhos2020}.
+W~tym przypadku regułą jest różnica jasności tła wynikająca ze sposobu przygotowania zbioru, a~nie z~kształtu podpisu.
+Wynik ten pokazuje, że usunięcie tła jest konieczne, a~bardzo małe błędy uzyskiwane na zbiorze CEDAR mogą wynikać z~takiej różnicy, a~nie z~rozpoznawania podpisów.
+
+\subsubsection*{Ciemność atramentu}
+
+Bez wyrównania ciemności atramentu wynik dla fałszerstw wykwalifikowanych praktycznie się nie zmienił (20,0\% wobec 20,3\%), a~dla fałszerstw losowych był nieco gorszy (12,6\% wobec 11,1\%).
+Przed treningiem przewidywano wyraźny spadek błędu dla fałszerstw, ponieważ sama ciemność atramentu pozwalała wykryć fałszerstwo z~EER równym 21,1\% (podrozdział~\ref{Subsec:przygotowanie}), jednak przewidywanie się nie sprawdziło.
+Możliwe, że sieć nie korzysta z~ciemności kresek albo uzyskuje tę samą informację z~ich grubości.
+Wyrównanie atramentu pozostawiono, ponieważ nie pogarsza wyniku dla fałszerstw wykwalifikowanych, a~dla fałszerstw losowych daje nieco lepszy wynik.
+
+\subsubsection*{Trening bez fałszerstw wykwalifikowanych}
+
+W~rzeczywistym zastosowaniu fałszerstwa podpisu nowej osoby zwykle nie są dostępne.
+Dlatego sprawdzono, jak działa sieć trenowana bez fałszerstw wykwalifikowanych.
+Dla każdej osoby treningowej losowano 48 par pozytywnych i~48 par z~fałszerstwami losowymi, tak aby klasy pozostały równoliczne.
+W~pierwszym wariancie fałszerstwa wykwalifikowane były używane tylko na zbiorze walidacyjnym do wyboru epoki i~progu, a~w~drugim nie były używane wcale.
+
+Bez fałszerstw w~treningu EER dla fałszerstw wykwalifikowanych wzrósł z~20,3\% do 26,4\%, a~gdy nie używano ich także na walidacji, do 27,8\%.
+Pogorszenie wystąpiło przy każdym ziarnie.
+Fałszerstwa w~treningu poprawiają więc wynik o~około 6 punktów procentowych, przy czym nie wiadomo, czy sieć uczy się z~nich cech fałszowania, czy pozostałych różnic wynikających ze sposobu zbierania danych, takich jak grubość kresek.
+Nawet bez fałszerstw sieć była jednak wyraźnie lepsza od prostej metody porównawczej, dla której EER przy przycinaniu wynosił 42,1\%, więc uczy się przede wszystkim kształtu podpisu.
+Dla fałszerstw losowych wynik był lepszy niż przy pełnym treningu (9,2\% wobec 11,1\%), ponieważ par z~fałszerstwami losowymi było w~treningu dwa razy więcej.
+
+Wariant bez fałszerstw pokazuje też problem z~wyborem progu.
+Próg wyznaczony na parach z~fałszerstwami losowymi okazał się zbyt łagodny dla fałszerstw wykwalifikowanych: model akceptował 64,4\% z~nich, odrzucając tylko 3,9\% par pozytywnych.
+Bez przykładów fałszerstw wykwalifikowanych nie da się więc dobrze ustawić progu.
+W~modelu końcowym fałszerstwa wykwalifikowane pozostały w~zbiorze treningowym i~walidacyjnym.
+
+\subsection{Walidacja krzyżowa i~wynik końcowy}
+\label{Subsec:cv}
+
+\subsubsection*{Sposób przeprowadzenia}
+
+Wyniki z~poprzednich podrozdziałów uzyskano na jednym podziale osób, w~którym zbiór testowy zawiera tylko 10 osób, a~w~eksperymencie z~rozmiarem wejścia zbiór walidacyjny i~testowy wskazały różne warianty.
+Aby sprawdzić, jak bardzo wynik zależy od tego, które osoby trafiły do zbioru testowego, końcowy wariant modelu oceniono pięciokrotną walidacją krzyżową.
+
+Wszystkie 55 osób podzielono losowo na pięć grup po 11 osób.
+W~każdej z~pięciu części jedna grupa stanowiła zbiór testowy, a~spośród pozostałych 44 osób losowano 10 do zbioru walidacyjnego i~34 do treningowego.
+Każda osoba znalazła się więc w~zbiorze testowym dokładnie raz.
+Pary walidacyjne i~testowe losowano raz dla każdej części, tym samym sposobem co w~podrozdziale~\ref{Subsec:pary}, co daje 1056 par testowych w~każdej części.
+Pary treningowe losowano na nowo w~każdej epoce.
+Podział zapisano w~pliku, a~wszystkie losowania wykonano z~ustalonymi ziarnami.
+W~każdej części sieć trenowano z~trzema ziarnami, czyli łącznie wykonano 15 treningów.
+Zastosowano najlepsze ustawienia z~podrozdziału~\ref{Subsec:warianty}: cały obraz, wejście 128~$\times$~256, augmentację geometryczną, usuwanie tła, wyrównanie atramentu i~fałszerstwa wykwalifikowane w~treningu.
+Na tych samych parach testowych obliczono również EER prostej metody porównawczej z~podrozdziału~\ref{Subsec:eksploracja}, dla obrazów przygotowanych tak samo jak dla sieci.
+
+\subsubsection*{Liczba epok}
+
+Przy treningu przez 30 epok najmniejszy błąd walidacyjny przypadał zwykle między 18. a~30. epoką, a~w~jednym przypadku na ostatnią epokę.
+Dlatego wszystkie 15 treningów powtórzono dla 50 epok.
+Ponieważ trening z~tym samym ziarnem daje identyczny wynik, pierwsze 30 epok obu treningów jest takie samo, a~różnica może pojawić się tylko wtedy, gdy najlepsza epoka wypada po 30.
+Sprawdzono to bezpośrednio: w~4 treningach najlepsza epoka nie przekroczyła 30 i~uzyskano wynik identyczny jak przy 30 epokach.
+W~pozostałych 11 treningach najlepsza epoka wypadła po 30.
+Średni EER na zbiorze walidacyjnym zmniejszył się z~12,1\% do 10,7\%, dla fałszerstw wykwalifikowanych z~20,4\% do 19,4\% (poprawa w~8 treningach, pogorszenie w~2), a~dla fałszerstw losowych z~13,6\% do 12,0\% (poprawa w~10 treningach, pogorszenie w~1).
+
+Przebieg treningu przedstawiono na rys.~\ref{Fig:krzywa_uczenia}.
+Średni błąd walidacyjny maleje mniej więcej do 40. epoki, a~później pozostaje na stałym poziomie około 13,5\%, podczas gdy strata na zbiorze treningowym nadal spada.
+Dalsze wydłużanie treningu nie powinno więc poprawić wyniku, ponieważ sieć coraz lepiej dopasowuje się do osób treningowych, ale nie do nowych osób.
+Błąd walidacyjny zmienia się z~epoki na epokę nawet o~kilka punktów procentowych, więc wybór najlepszej epoki zależy w~pewnym stopniu od przypadku.
+Model końcowy trenowano przez 50 epok.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=\textwidth]{figures/krzywa_uczenia.png}
+	\caption{Przebieg treningu przez 50 epok w~walidacji krzyżowej: a)~EER na zbiorze walidacyjnym, b)~strata na zbiorze treningowym; szare linie -- 15 pojedynczych treningów, czarna linia -- średnia}
+	\label{Fig:krzywa_uczenia}
+\end{figure}
+
+% TODO: akapit o zmniejszaniu kroku uczenia (cosinus) po zakończeniu eksperymentu
+
+\subsubsection*{Wyniki}
+
+Wyniki dla poszczególnych części zestawiono w~tabeli~\ref{Tab:cv}.
+
+\begin{table}[ht]
+\caption{EER w~walidacji krzyżowej w~procentach (sieć: średnia z~trzech treningów w~części; wiersz ,,średnia'' -- średnia $\pm$ odchylenie standardowe z~15 treningów sieci i~z~5 części dla metody porównawczej)}
+\centering
+	\begin{tabular}{|c|c|c|c|c|c|c|}
+		\hline
+		\multirow{2}{*}{Część} & \multicolumn{2}{c|}{Sieć, 30 epok} & \multicolumn{2}{c|}{Sieć, 50 epok} & \multicolumn{2}{c|}{Metoda porównawcza} \\
+		\cline{2-7}
+		& wykw. & losowe & wykw. & losowe & wykw. & losowe \\
+		\hline
+		1 & 23,1 & 14,5 & 22,6 & 13,1 & 36,3 & 31,8 \\
+		2 & 16,5 & 16,7 & 17,3 & 13,4 & 41,3 & 37,9 \\
+		3 & 22,7 & 10,0 & 21,8 & 9,9 & 34,8 & 29,9 \\
+		4 & 18,9 & 13,9 & 15,5 & 10,9 & 43,2 & 34,1 \\
+		5 & 20,9 & 12,9 & 19,9 & 12,6 & 39,7 & 29,9 \\
+		\hline
+		średnia & 20,4 $\pm$ 3,1 & 13,6 $\pm$ 2,4 & 19,4 $\pm$ 3,5 & 12,0 $\pm$ 1,8 & 39,0 $\pm$ 3,1 & 32,7 $\pm$ 3,0 \\
+		\hline
+	\end{tabular}
+\label{Tab:cv}
+\end{table}
+
+Ostatecznie sieć uzyskała EER równy 19,4\% $\pm$ 3,5 dla fałszerstw wykwalifikowanych i~12,0\% $\pm$ 1,8 dla fałszerstw losowych.
+Prosta metoda porównawcza na tych samych parach osiągnęła 39,0\% i~32,7\%, więc sieć zmniejszyła błąd mniej więcej o~połowę.
+Sieć była lepsza w~każdej części, a~nawet najgorszy z~15 treningów (25,3\% dla fałszerstw wykwalifikowanych) był lepszy od najlepszej części metody porównawczej (34,8\%).
+
+Wynik walidacji krzyżowej dla 30 epok (20,4\%) jest wyraźnie gorszy niż wynik tego samego wariantu na stałym podziale (17,2\% $\pm$ 0,5, tabela~\ref{Tab:warianty}).
+Stały podział okazał się więc łatwiejszy od przeciętnego.
+Część 5 zawiera wszystkie 10 osób testowych ze stałego podziału i~jedną dodatkową osobę, a~mimo to dała 20,9\%.
+Różnią się w~niej jednak osoby walidacyjne i~liczba osób treningowych, a~pary testowe zostały wylosowane na nowo.
+Średnie wyniki poszczególnych części wahają się od 16,5\% do 23,1\%, a~ich odchylenie standardowe wynosi około 2,4 punktu procentowego, podczas gdy średnie odchylenie między ziarnami w~obrębie jednej części wynosi około 1,4 punktu procentowego (wartości dla 30 epok).
+Wybór osób testowych wpływa więc na wynik bardziej niż ziarno, choć w~niektórych częściach różnice między ziarnami także są duże, na przykład w~części 3 od 17,7\% do 25,8\%.
+Części trudne dla sieci nie pokrywają się z~częściami trudnymi dla metody porównawczej.
+Na przykład część 2 była najłatwiejsza dla sieci przy 30 epokach, a~jedną z~najtrudniejszych dla metody porównawczej.
+
+Przy progu wyznaczonym na zbiorze walidacyjnym sieć trenowana przez 50 epok miała dla fałszerstw wykwalifikowanych FAR równy 18,5\% $\pm$ 7,8 i~FRR równy 21,4\% $\pm$ 4,4, a~dla fałszerstw losowych FAR równy 7,3\% $\pm$ 2,5.
+FAR dla fałszerstw wykwalifikowanych wahał się w~poszczególnych treningach od 9,1\% do 32,6\%.
+Próg wyznaczony na 10 osobach walidacyjnych przenosi się więc na nowe osoby w~niestabilny sposób, a~w~praktycznym zastosowaniu potrzebny byłby większy zbiór do jego wyznaczenia.
+
+Ustawienia modelu wybrano na stałym podziale osób, a~jego osoby testowe występują w~części 5 walidacji krzyżowej.
+Wynik walidacji krzyżowej nie jest więc całkowicie niezależny od wyboru ustawień i~może być nieznacznie optymistyczny.
+
+\subsection{Porównanie z~wynikami z~literatury}
+\label{Subsec:porownanie}
+
+Uzyskany wynik jest wyraźnie gorszy od wyników podawanych dla zbioru CEDAR w~literaturze.
+Sieć SigNet, oparta tak jak w~niniejszej pracy na sieci syjamskiej i~funkcji straty kontrastowej, uzyskała na tym zbiorze dokładność 100\% przy FAR i~FRR równych zero \cite{dey2017}.
+Wynik ten otrzymano jednak w~innych warunkach.
+Zbiór testowy zawierał 5 osób z~jednego losowego podziału, a~dokładność obliczano jako najlepszą wartość spośród wszystkich progów sprawdzonych na zbiorze testowym, czyli próg był dobierany na tych samych danych, na których oceniano model \cite{dey2017}.
+W~opisie przygotowania obrazów nie wspomniano o~usuwaniu tła.
+Jak pokazano w~podrozdziale~\ref{Subsec:wycieki}, bez usuwania tła sieć opisana w~niniejszej pracy osiągnęła EER równy 1,8\%, więc prawie bezbłędny wynik może być skutkiem różnicy jasności tła.
+Bez powtórzenia badań z~pracy \cite{dey2017} nie da się jednak tego potwierdzić.
+
+W~pracy \cite{hafemann2017features} na zbiorze CEDAR uzyskano EER równy 4,63\%.
+Zastosowano tam podejście zależne od autora: dla każdej osoby trenowano osobny klasyfikator na podstawie 12 jej podpisów wzorcowych, korzystając z~cech wyznaczonych przez sieć splotową.
+Model miał więc do dyspozycji podpisy osoby, którą weryfikował, podczas gdy sieć z~niniejszej pracy porównuje dwa podpisy osoby, której nigdy nie widziała.
+
+Wyniki z~literatury nie są więc bezpośrednio porównywalne z~wynikiem niniejszej pracy.
+W~pracy zastosowano surowszy sposób oceny: osoby testowe nie występowały w~treningu, próg nie był dobierany na zbiorze testowym, wynik uśredniono z~15 treningów obejmujących wszystkie 55 osób, a~różnicę jasności tła usunięto przed treningiem.
 
 
 \section{Podsumowanie i wnioski końcowe}
@@ -517,6 +812,7 @@ Sieć zaimplementowano w~bibliotece PyTorch i~trenowano na karcie graficznej NVI
 \bibitem{hadsell2006} Hadsell R., Chopra S., LeCun Y.: Dimensionality Reduction by Learning an Invariant Mapping. IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2006, str.~1735--1742.
 \bibitem{kingma2015} Kingma D.P., Ba J.: Adam: A Method for Stochastic Optimization. International Conference on Learning Representations (ICLR), 2015.
 \bibitem{shorten2019} Shorten C., Khoshgoftaar T.M.: A survey on Image Data Augmentation for Deep Learning. Journal of Big Data, vol.~6, nr~60, 2019.
+\bibitem{geirhos2020} Geirhos R., Jacobsen J.-H., Michaelis C., Zemel R., Brendel W., Bethge M., Wichmann F.A.: Shortcut Learning in Deep Neural Networks. Nature Machine Intelligence, vol.~2, nr~11, 2020, str.~665--673.
 
 \end{thebibliography}
 
