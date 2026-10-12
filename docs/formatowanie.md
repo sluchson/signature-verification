@@ -31,11 +31,11 @@ Promotor sam pisze, że trzeba uwzględnić wymagania wydziału, więc przy ró�
 
 ## Znalezione błędy
 - październik 2026: tekst był w Latin Modern zamiast Times, bo szablon ładuje `lmodern` po `mathptmx`; poprawione w `weiiszablon.tex` (zmiana `\rmdefault` i czcionek matematycznych), `weiiszablon.sty` bez zmian
+- październik 2026: rysunki `cedar_przyklad.png` i `tlo_histogram.png` (notebook 01) nie były w Times, a podpisy osi na histogramie miały w pracy ok. 7,7 pkt; poprawione (Times New Roman, 8–9 pkt, rozmiar dopasowany do szerokości w pracy, 300 dpi)
 
 ## Do zrobienia przed oddaniem każdej wersji
 - wydrukować, przeczytać na papierze
 - dać komuś do sprawdzenia pod kątem językowym
-- czcionka Times New Roman na rysunkach `cedar_przyklad.png` i `tlo_histogram.png` (notebook 01), podpisy osi na `tlo_histogram` po zmniejszeniu mają ok. 7,7 pkt, a minimum to 8
 
 ## Pytania do promotora
 - czy Wprowadzenie i Podsumowanie mają mieć numer (szablon WEII numeruje)

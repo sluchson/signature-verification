@@ -22,7 +22,7 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - model nie widzi w treningu żadnego podpisu osób testowych
 - tylko wtedy wynik na teście pokazuje, jak model działa dla nowych osób
 - w niektórych artykułach EER na CEDAR jest bliski 0%, podejrzewam, że czasem przez te same osoby w treningu i teście
-- to na razie przypuszczenie, przed rozdz. 5 znaleźć artykuł, który to potwierdza
+- artykułu potwierdzającego przypuszczenie nie znalazłem; w pracy (3.3) zamiast tego konkretny przykład: Kalera i in. dzielili podpisy, a nie osoby (te same osoby w treningu i teście)
 
 ## Sierpień 2026 — Model: sieć syjamska z contrastive loss
 - dwie takie same podsieci CNN ze wspólnymi wagami
@@ -44,9 +44,9 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - do sprawdzenia: margines w contrastive loss, rozmiar embeddingu, liczba warstw
 - każdą wartość w pracy chcę uzasadnić wynikiem eksperymentu
 
-## Sierpień 2026 — GUI (do ustalenia)
+## Sierpień 2026 — GUI
 - opcje: Tkinter / PyQt (aplikacja okienkowa) albo Streamlit / Gradio (przeglądarka, szybciej się robi)
-- zapytać promotora, co jest akceptowane, zanim zacznę
+- październik 2026: decyzja, że GUI będzie w pracy; wybór technologii do ustalenia (zapytać promotora, czy któraś jest wymagana)
 
 ## Wrzesień 2026 — Skala szarości i jeden rozmiar
 - każdy obraz przy wczytywaniu: `convert("L")` i zmiana rozmiaru na stały
@@ -283,7 +283,7 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - białe pasy po bokach całych obrazów nie szkodzą
 - notebook `04_eksperymenty.ipynb`
 
-## Walidacja krzyżowa
+## Październik 2026 — Walidacja krzyżowa
 
 - po co: w eksperymencie z rozmiarem wejścia walidacja i test pokazywały co innego, a test to tylko 10 osób, więc nie wiadomo było, ile wynik zależy od tego, kto trafił do testu
 - jak: 55 osób podzielone na 5 części po 11 (seed 42, plik data/cv_folds.json); każda część raz jest testem, 10 osób walidacja, 34 trening
@@ -302,7 +302,7 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - FAR wykwalifikowane od 9,8 do 37,1%, czyli próg wybrany na walidacji (10 osób) słabo przenosi się na test
 - decyzja: w rozdziale 5 jako główny wynik sieci podaję wynik z walidacji krzyżowej (20,4 ± 3,1 / 13,6 ± 2,4), a wyniki z jednego podziału zostają do porównywania wariantów między sobą
 
-## Metoda bazowa na częściach walidacji krzyżowej
+## Październik 2026 — Metoda bazowa na częściach walidacji krzyżowej
 
 - po co: porównać sieć i metodę bazową na dokładnie tych samych parach testowych
 - jak: korelacja pikseli po pełnym przygotowaniu (tło, atrament, crop none, 128x256), te same pary co w walidacji krzyżowej (seed 123), próg z walidacji (prawdziwe + wykwalifikowane)

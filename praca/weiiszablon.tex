@@ -17,6 +17,7 @@
 \DeclareSymbolFont{largesymbols}{OMX}{ztmcm}{m}{n}
 \usepackage[section]{placeins}
 \usepackage{multirow}
+\setlength{\emergencystretch}{3em}
 
 \author{Maciej Pereślucha}
 \studentID{EF-177139}
@@ -46,11 +47,12 @@
 \cleardoublepage
 
 
-% Wykaz uzupełniać na bieżąco, alfabetycznie 
+% Wykaz uzupełniać na bieżąco, alfabetycznie
 \section*{Wykaz symboli, oznaczeń i skrótów}
 \addcontentsline{toc}{section}{Wykaz symboli, oznaczeń i skrótów}
 
 \begin{description}[leftmargin=2.5cm, labelwidth=2cm, labelsep=0.5cm, font=\normalfont]
+	\item[AER] ang. \textit{average error rate} -- średni współczynnik błędów
 	\item[CEDAR] Center of Excellence for Document Analysis and Recognition -- ośrodek Uniwersytetu w~Buffalo, autor zbioru podpisów
 	\item[CNN] ang. \textit{convolutional neural network} -- splotowa sieć neuronowa	
 	\item[CSV] ang. \textit{comma-separated values} -- format pliku tekstowego z~wartościami rozdzielonymi przecinkami
@@ -60,6 +62,7 @@
 	\item[MD5] ang. \textit{Message Digest 5} -- algorytm obliczania skrótu pliku
 	\item[ReLU] ang. \textit{rectified linear unit} -- funkcja aktywacji zwracająca wartość wejścia dla wartości dodatnich i~zero dla ujemnych
 	\item[RGBA] ang. \textit{red, green, blue, alpha} -- zapis obrazu w~trzech kanałach koloru i~kanale przezroczystości
+	\item[SVM] ang. \textit{support vector machine} -- maszyna wektorów nośnych
 \end{description}
 
 \cleardoublepage
@@ -84,7 +87,7 @@ Dzięki temu sieć może być stosowana także do osób, których podpisów nie 
 W~pracy wykorzystano podpisy w~postaci zeskanowanych obrazów.
 Taki wariant nazywa się weryfikacją statyczną (ang. \textit{offline}), w~odróżnieniu od weryfikacji dynamicznej (ang. \textit{online}), w~której podpis składany jest na tablecie rejestrującym na przykład prędkość ruchu pióra.
 Na obrazie tych informacji nie ma, widoczny jest tylko kształt podpisu.
-Najtrudniejsze do wykrycia są fałszerstwa wykwalifikowane, czyli podpisy podrobione przez osobę, która wcześniej ćwiczyła naśladowanie oryginału \cite{kalera2004}.
+Najtrudniejsze do wykrycia są fałszerstwa wykwalifikowane, czyli podpisy podrobione przez osobę, która wcześniej ćwiczyła naśladowanie oryginału \cite{hafemann2017review}.
 Wstępna analiza danych wykonana w~ramach pracy pokazała, że proste porównanie obrazów piksel po pikselu myli się w~około jednej trzeciej przypadków, dlatego potrzebna jest bardziej zaawansowana metoda.
 
 Celem pracy było opracowanie systemu, który na podstawie zeskanowanego obrazu sprawdza, czy podpis jest autentyczny, oraz ocena jego skuteczności.
@@ -106,8 +109,201 @@ Zakres pracy obejmował:
 \section{Metody weryfikacji podpisu -- przegląd literatury}
 \label{Sec:literatura}
 
-% TODO: problem weryfikacji (online/offline, rodzaje fałszerstw), sieci syjamskie,
-% funkcja straty kontrastowej, SigNet, miary oceny (FAR, FRR, EER)
+W~rozdziale przedstawiono podstawowe pojęcia związane z~weryfikacją podpisu oraz metody opisane w~literaturze.
+Najpierw omówiono samo zadanie weryfikacji i~miary używane do oceny systemów, a~następnie klasyczne metody oparte na ręcznie projektowanych cechach oraz metody wykorzystujące sieci neuronowe.
+Osobno opisano sieci splotowe i~sieci syjamskie, na których oparto rozwiązanie zaproponowane w~pracy, a~na końcu zjawisko uczenia na skróty, które okazało się ważne przy interpretacji wyników.
+
+\subsection{Weryfikacja podpisu odręcznego}
+\label{Subsec:weryfikacja}
+
+\subsubsection*{Podpis jako cecha biometryczna}
+
+Biometria to automatyczne rozpoznawanie osób na podstawie ich cech fizjologicznych lub behawioralnych \cite{jain2004}.
+Do cech fizjologicznych należą na przykład odcisk palca, twarz czy tęczówka oka, a~do behawioralnych głos i~podpis odręczny \cite{hafemann2017review}.
+Podpis jest powszechnie akceptowanym sposobem potwierdzania tożsamości w~sprawach urzędowych, prawnych i~handlowych \cite{jain2004}.
+Jako cecha behawioralna zmienia się jednak w~czasie i~zależy od stanu fizycznego i~emocjonalnego osoby, a~u~niektórych osób nawet kolejne podpisy wyraźnie się od siebie różnią \cite{jain2004}.
+
+System biometryczny może działać w~jednym z~dwóch trybów \cite{jain2004}.
+W~trybie weryfikacji użytkownik podaje swoją tożsamość, a~system porównuje jego próbkę tylko z~wzorcem tej jednej osoby i~sprawdza, czy podana tożsamość jest prawdziwa.
+W~trybie identyfikacji tożsamość nie jest podawana, a~system porównuje próbkę z~wzorcami wszystkich zapisanych osób, aby ustalić, do kogo należy.
+Niniejsza praca dotyczy weryfikacji: dla dwóch podpisów należy rozstrzygnąć, czy pochodzą od tej samej osoby.
+
+\subsubsection*{Weryfikacja dynamiczna i~statyczna}
+
+W~zależności od sposobu pozyskania podpisu wyróżnia się weryfikację dynamiczną (ang. \textit{online}) i~statyczną (ang. \textit{offline}) \cite{hafemann2017review}.
+W~weryfikacji dynamicznej podpis składany jest na urządzeniu, takim jak tablet, które zapisuje położenie pióra w~kolejnych chwilach czasu, a~czasem także jego nacisk i~nachylenie.
+W~weryfikacji statycznej podpis jest pozyskiwany po zakończeniu pisania, zwykle przez zeskanowanie dokumentu, i~ma postać obrazu \cite{hafemann2017review}.
+Na obrazie brakuje informacji dynamicznej o~przebiegu pisania \cite{kalera2004}.
+Systemy dynamiczne osiągają dzięki tej informacji zwykle lepsze wyniki, ale wymagają specjalnego sprzętu, a~w~wielu sytuacjach, na przykład przy sprawdzaniu czeków i~dokumentów, dostępny jest wyłącznie obraz podpisu \cite{dey2017}.
+
+\subsubsection*{Rodzaje fałszerstw}
+
+Fałszerstwa podpisów dzieli się zwykle na trzy rodzaje \cite{hafemann2017review}.
+W~fałszerstwie losowym fałszerz nie ma żadnych informacji o~osobie ani o~jej podpisie i~składa własny podpis, który ma zupełnie inny kształt niż podpis prawdziwy.
+W~fałszerstwie prostym fałszerz zna imię i~nazwisko osoby, ale nie zna jej podpisu.
+W~fałszerstwie wykwalifikowanym fałszerz ma dostęp do prawdziwego podpisu i~często ćwiczy jego naśladowanie, dlatego takie fałszerstwa są najbardziej podobne do podpisów prawdziwych i~najtrudniejsze do wykrycia \cite{hafemann2017review}.
+
+\subsubsection*{Trudności i~podejścia do weryfikacji}
+
+Jedną z~głównych trudności jest duża zmienność podpisów jednej osoby, większa niż w~przypadku cech fizjologicznych, takich jak odcisk palca \cite{hafemann2017review}.
+Jednocześnie fałszerstwa wykwalifikowane są bardzo podobne do podpisów prawdziwych, więc różnice między klasami są małe.
+Dodatkowo w~rzeczywistym zastosowaniu dla osób zapisanych w~systemie dostępne są tylko ich podpisy prawdziwe, i~to zwykle w~niewielkiej liczbie, a~system musi mimo to odrzucać fałszerstwa \cite{hafemann2017review}.
+
+Systemy weryfikacji dzieli się na zależne i~niezależne od autora \cite{hafemann2017review}.
+W~podejściu zależnym od autora (ang. \textit{writer-dependent}) dla każdej osoby trenowany jest osobny model, uczony na jej podpisach prawdziwych i~na podpisach prawdziwych innych osób, które pełnią rolę fałszerstw losowych.
+W~podejściu niezależnym od autora (ang. \textit{writer-independent}) jeden model służy do weryfikacji podpisów wszystkich osób: uczy się porównywać podpis badany z~podpisem wzorcowym, a~do treningu i~testu używa się rozłącznych grup osób \cite{hafemann2017review}.
+Podejście zależne od autora jest częściej spotykane w~literaturze i~zwykle daje lepsze wyniki, ale jego złożoność rośnie wraz z~liczbą osób w~systemie \cite{hafemann2017features}.
+Podejście niezależne od autora nie wymaga ponownego trenowania modelu po dodaniu nowej osoby, co ma znaczenie na przykład w~banku, w~którym nowi klienci pojawiają się codziennie \cite{dey2017}.
+
+\subsection{Miary oceny systemów weryfikacji}
+\label{Subsec:miary}
+
+System weryfikacji porównuje wynik dopasowania dwóch próbek z~progiem decyzyjnym i~na tej podstawie uznaje je za pochodzące od tej samej osoby albo od różnych osób \cite{jain2004}.
+Może przy tym popełnić dwa rodzaje błędów: zaakceptować próbki różnych osób albo odrzucić próbki tej samej osoby \cite{jain2004}.
+Opisują je współczynnik błędnych akceptacji FAR (ang. \textit{false acceptance rate}) i~współczynnik błędnych odrzuceń FRR (ang. \textit{false rejection rate}) \cite{kalera2004}:
+\begin{equation}
+	\mathrm{FAR}(t) = \frac{N_{\mathrm{FA}}(t)}{N_{\mathrm{neg}}}, \qquad
+	\mathrm{FRR}(t) = \frac{N_{\mathrm{FR}}(t)}{N_{\mathrm{poz}}},
+	\label{Eq:far_frr}
+\end{equation}
+gdzie $t$ oznacza próg, $N_{\mathrm{FA}}(t)$ liczbę błędnie zaakceptowanych par próbek różnych osób, $N_{\mathrm{FR}}(t)$ liczbę błędnie odrzuconych par próbek tej samej osoby, a~$N_{\mathrm{neg}}$ i~$N_{\mathrm{poz}}$ liczbę wszystkich par obu rodzajów.
+W~pracy \cite{jain2004} te same błędy nazwano współczynnikami fałszywego dopasowania i~fałszywego niedopasowania.
+
+Oba współczynniki zależą od progu: przesunięcie progu zmniejsza jeden z~nich, ale zwiększa drugi \cite{jain2004}.
+W~systemach o~wysokim poziomie bezpieczeństwa ważniejszy jest mały FAR, a~w~innych zastosowaniach można dopuścić więcej błędnych akceptacji w~zamian za mniej odrzuceń prawdziwych użytkowników \cite{jain2004}.
+Do porównywania systemów niezależnie od wybranego progu używa się równego współczynnika błędów EER, czyli wartości błędu w~punkcie, w~którym FAR i~FRR są sobie równe \cite{kalera2004}.
+W~pracach dotyczących podpisów podaje się też osobno odsetek zaakceptowanych fałszerstw wykwalifikowanych oraz średni błąd AER (ang. \textit{average error rate}), czyli średnią z~FRR i~tego odsetka \cite{hafemann2017review}.
+
+Porównywanie wyników z~różnych prac jest utrudnione.
+Wiele badań prowadzono na prywatnych zbiorach danych, a~nawet przy użyciu tego samego zbioru prace różnią się sposobem treningu, na przykład liczbą podpisów wzorcowych, oraz sposobem oceny, na przykład podawanymi miarami \cite{hafemann2017review}.
+
+\subsection{Metody weryfikacji podpisów statycznych}
+\label{Subsec:metody}
+
+\subsubsection*{Metody oparte na cechach projektowanych ręcznie}
+
+Klasyczny system weryfikacji podpisu składa się z~trzech etapów: przygotowania obrazu, wyznaczenia cech i~klasyfikacji \cite{hafemann2017review}.
+Przygotowanie obrazu obejmuje między innymi usuwanie szumu oraz normalizację rozmiaru, na przykład przez przycięcie obrazu do prostokąta zawierającego podpis albo umieszczenie podpisu w~środku ramki o~stałym rozmiarze \cite{hafemann2017review}.
+
+Przez wiele lat główny wysiłek badaczy skupiał się na projektowaniu cech, które dobrze opisują podpis \cite{hafemann2017review}.
+Stosowano między innymi cechy geometryczne (wysokość, szerokość, pole podpisu), cechy kierunkowe opisujące kierunek kresek, przekształcenia matematyczne obrazu, cechy teksturowe, w~tym lokalne wzorce binarne (ang. \textit{local binary patterns}), oraz cechy pseudodynamiczne, które próbują odtworzyć z~obrazu informację o~przebiegu pisania \cite{hafemann2017review}.
+Cechy mogą opisywać cały podpis albo jego fragmenty, wyznaczane najczęściej przez podział obrazu na siatkę.
+Mimo wielu propozycji żaden sposób wyznaczania cech nie okazał się wyraźnie najlepszy dla weryfikacji podpisu \cite{hafemann2017features}.
+Do klasyfikacji używano głównie ukrytych modeli Markowa, maszyn wektorów nośnych (ang. \textit{support vector machine}, SVM) oraz sieci neuronowych \cite{hafemann2017review}.
+
+Przykładem metody klasycznej jest praca \cite{kalera2004}, w~której przedstawiono zbiór CEDAR.
+Z~obrazów zbinaryzowanych wyznaczano tam cechy gradientowe, strukturalne i~opisujące wklęsłości podpisu, tworząc wektor 1024 bitów.
+Podobieństwo dwóch podpisów obliczano miarą korelacji, a~decyzję podejmowano na podstawie rozkładów podobieństwa par podpisów tej samej osoby i~par z~fałszerstwem.
+Na zbiorze CEDAR uzyskano EER równy 21,9\%, przy czym do treningu i~testu użyto różnych podpisów tych samych osób \cite{kalera2004}.
+
+\subsubsection*{Metody oparte na uczeniu cech}
+
+W~ostatnich latach coraz częściej stosuje się metody, które nie wymagają projektowania cech, ponieważ uczą się ich bezpośrednio z~pikseli obrazu \cite{hafemann2017review}.
+W~pracy \cite{hafemann2017features} sieć splotową wytrenowano na podpisach jednej grupy osób, ucząc ją rozpoznawać, do kogo należy podpis, a~w~jednym z~wariantów także odróżniać podpisy prawdziwe od fałszerstw.
+Wytrenowana sieć służyła następnie do wyznaczania cech podpisów innych osób, a~dla każdej z~nich trenowano osobny klasyfikator SVM.
+Cechy uczone są więc niezależnie od autora, a~klasyfikacja zależnie od autora.
+Przed podaniem do sieci podpis umieszczano w~środku dużego obrazu według środka masy, usuwano tło metodą Otsu, odwracano jasność i~zmniejszano obraz do rozmiaru wejścia sieci \cite{hafemann2017features}.
+Metoda ta osiągnęła najlepsze wówczas wyniki na kilku zbiorach podpisów, w~tym na zbiorze CEDAR, na którym EER wyniósł 4,63\% przy 12 podpisach wzorcowych każdej osoby \cite{hafemann2017features}.
+
+Wyniki wybranych metod na zbiorze CEDAR zestawiono w~tabeli~\ref{Tab:cedar_literatura}, opracowanej na podstawie przeglądu \cite{hafemann2017review}.
+Wszystkie wymienione metody poza metodą z~uczeniem cech opierają się na cechach projektowanych ręcznie.
+
+\begin{table}[ht]
+\caption{Wyniki wybranych metod na zbiorze CEDAR według \cite{hafemann2017review} (błąd AER, a~dla uczenia cech EER, w~procentach)}
+\centering
+	\begin{tabular}{|l|c|c|c|}
+		\hline
+		Cechy i~klasyfikator & Podejście & Podpisy wzorcowe & Błąd \\
+		\hline
+		dopasowanie grafów & zależne & 16 & 7,9 \\
+		morfologia podpisu (SVM) & niezależne & 1 & 11,81 \\
+		cechy otoczenia (sieć neuronowa) & niezależne & 1 & 8,33 \\
+		kody łańcuchowe (SVM) & zależne & 12 & 7,84 \\
+		transformata curvelet (jednoklasowa SVM) & zależne & 12 & 5,6 \\
+		uczenie cech siecią splotową (SVM) & zależne & 12 & 4,63 \\
+		\hline
+	\end{tabular}
+\label{Tab:cedar_literatura}
+\end{table}
+
+\subsection{Sieci splotowe}
+\label{Subsec:cnn}
+
+Sieci splotowe (ang. \textit{convolutional neural network}, CNN) są rodzajem sieci neuronowych przeznaczonym do przetwarzania danych o~strukturze siatki, takich jak obrazy, w~których co najmniej jedna warstwa zamiast zwykłego mnożenia macierzy wykonuje operację splotu \cite{goodfellow2016}.
+Warstwa splotowa składa się z~filtrów, czyli niewielkich macierzy wag, które są przesuwane po obrazie.
+W~każdym położeniu filtr oblicza sumę iloczynów swoich wag i~wartości pikseli, a~wyniki dla wszystkich położeń tworzą mapę cech.
+Każde wyjście zależy więc tylko od małego fragmentu wejścia, a~te same wagi są używane w~całym obrazie \cite{goodfellow2016,hafemann2017features}.
+Dzięki temu sieć ma znacznie mniej parametrów niż sieć w~pełni połączona, a~cecha nauczona w~jednym miejscu obrazu jest wykrywana również w~każdym innym \cite{goodfellow2016}.
+
+Typowa warstwa sieci splotowej składa się z~trzech etapów: splotu, nieliniowej funkcji aktywacji, na przykład ReLU, oraz warstwy łączącej (ang. \textit{pooling}), która zastępuje wartości z~niewielkiego obszaru jedną liczbą, na przykład ich maksimum \cite{goodfellow2016}.
+Warstwa łącząca zmniejsza rozmiar map cech \cite{dey2017} i~sprawia, że wynik w~niewielkim stopniu zależy od małych przesunięć obrazu \cite{goodfellow2016}.
+Cała sieć składa się zwykle z~kilku takich bloków, po których następują warstwy w~pełni połączone \cite{dey2017}.
+Wagi sieci są dobierane metodą spadku gradientu, z~gradientem obliczanym przez propagację wsteczną na kolejnych porcjach danych treningowych \cite{dey2017}.
+
+Kolejne warstwy sieci splotowej uczą się coraz bardziej złożonych cech: od prostych cech niskiego poziomu w~pierwszych warstwach do bardziej ogólnych reprezentacji w~warstwach dalszych \cite{hadsell2006}.
+W~przypadku podpisów sieć splotowa, podobnie jak ręcznie projektowane metody, wyznacza cechy lokalnie, w~nakładających się fragmentach obrazu, ale sposób ich wyznaczania nie jest z~góry ustalony, tylko uczony z~danych \cite{hafemann2017features}.
+Duże sieci uczone na niewielkich zbiorach danych łatwo jednak dopasowują się do danych treningowych zamiast uczyć się ogólnych zależności, co nazywa się przeuczeniem \cite{shorten2019}.
+Metody ograniczania przeuczenia użyte w~pracy, takie jak porzucanie, normalizacja wsadowa i~augmentacja danych, opisano w~rozdziale~\ref{Sec:model}.
+
+\subsection{Sieci syjamskie i~funkcja straty kontrastowej}
+\label{Subsec:syjamskie}
+
+\subsubsection*{Sieć syjamska}
+
+Sieć syjamską zaproponowano w~pracy \cite{bromley1993} właśnie do weryfikacji podpisu \cite{li2022}.
+Składała się ona z~dwóch jednakowych podsieci, które wyznaczały cechy dwóch podpisów, oraz neuronu wyjściowego mierzącego odległość między otrzymanymi wektorami cech \cite{bromley1993}.
+Obie podsieci miały identyczne wagi, a~jako miarę odległości użyto cosinusa kąta między wektorami.
+Podpisy pochodziły z~tabletu, więc była to weryfikacja dynamiczna.
+Sieć trenowano na parach podpisów: w~połowie były to pary dwóch podpisów prawdziwych, w~40\% pary z~fałszerstwem, a~w~10\% pary z~fałszerstwem losowym, którego rolę pełnił prawdziwy podpis innej osoby \cite{bromley1993}.
+Podczas weryfikacji wektor cech podpisu porównywano z~zapisanym modelem podpisu danej osoby i~akceptowano podpisy, których odległość była mniejsza od progu.
+Przy progu wykrywającym 80\% fałszerstw system akceptował 95,5\% podpisów prawdziwych \cite{bromley1993}.
+
+W~ogólnym ujęciu sieć syjamska składa się z~trzech części: wyznaczania cech przez dwie gałęzie o~tej samej budowie i~tych samych wagach, porównania otrzymanych cech oraz podjęcia decyzji, na przykład przez porównanie z~progiem \cite{li2022}.
+Odmianą jest sieć pseudosyjamska, w~której gałęzie nie mają wspólnych wag, stosowana na przykład dla danych różnego rodzaju \cite{li2022}.
+Zaproponowano też sieci z~większą liczbą gałęzi, na przykład sieć trójkową (ang. \textit{triplet network}), która porównuje próbkę wzorcową jednocześnie z~próbką tej samej klasy i~próbką innej klasy \cite{li2022}.
+Sieć syjamska uczy się przez porównywanie próbek, dlatego dobrze sprawdza się przy małej liczbie danych: z~$N$ próbek można utworzyć $N(N-1)/2$ par \cite{li2022}.
+Dla 24 podpisów jednej osoby ze zbioru CEDAR daje to 276 par podpisów prawdziwych.
+
+\subsubsection*{Funkcja straty kontrastowej}
+
+Do trenowania sieci syjamskich często używa się funkcji straty kontrastowej, opisanej w~pracy \cite{hadsell2006}.
+Strata jest obliczana dla par próbek: dla par podobnych rośnie wraz z~odległością między ich wektorami cech, a~dla par niepodobnych jest dodatnia tylko wtedy, gdy odległość jest mniejsza od ustalonego marginesu.
+Sieć uczy się więc przyciągać do siebie wektory próbek podobnych i~odpychać wektory próbek niepodobnych, ale nie dalej niż na odległość marginesu \cite{hadsell2006}.
+Składnik dla par niepodobnych jest niezbędny, ponieważ bez niego najmniejszą stratę dałoby przypisanie wszystkim próbkom tego samego wektora \cite{hadsell2006}.
+Nauczone odwzorowanie można stosować także do nowych próbek, których nie było w~zbiorze treningowym \cite{hadsell2006}.
+Wzór funkcji straty w~postaci użytej w~niniejszej pracy podano w~podrozdziale~\ref{Subsec:trening}.
+Wyniki sieci syjamskich są wrażliwe na wartość marginesu, którą zwykle dobiera się na podstawie doświadczenia \cite{li2022}.
+
+\subsubsection*{Sieć SigNet}
+
+Najbliższą niniejszej pracy jest sieć SigNet \cite{dey2017}, czyli splotowa sieć syjamska do niezależnej od autora weryfikacji podpisów statycznych.
+Obrazy podpisów skalowano w~niej do rozmiaru 155~$\times$~220 pikseli bez zachowania proporcji, odwracano jasność i~dzielono przez odchylenie standardowe wartości pikseli w~zbiorze.
+Każda gałąź sieci miała cztery warstwy splotowe z~filtrami od 11~$\times$~11 do 3~$\times$~3 oraz dwie warstwy w~pełni połączone, z~których ostatnia zwracała wektor cech o~długości 128.
+Sieć trenowano funkcją straty kontrastowej z~marginesem równym 1 i~odległością euklidesową, algorytmem RMSprop przez 20 epok \cite{dey2017}.
+Na zbiorze CEDAR do treningu użyto 50 osób, a~do testu 5, a~dla każdej osoby wylosowano tyle samo par pozytywnych i~negatywnych.
+Jako wynik podawano największą dokładność spośród wszystkich progów sprawdzonych na zbiorze testowym.
+Na zbiorze CEDAR uzyskano w~ten sposób dokładność 100\% \cite{dey2017}.
+
+W~tej samej pracy sprawdzono również, jak sieć działa na innym zbiorze niż ten, na którym ją trenowano.
+Model wytrenowany na zbiorze CEDAR osiągał na pozostałych zbiorach dokładność od około 54\% do 64\%, co wskazuje, że każdy zbiór ma pewne charakterystyczne cechy \cite{dey2017}.
+Na zbiorze GPDS300 sprawdzono też trening bez fałszerstw wykwalifikowanych, w~którym ich rolę pełniły podpisy prawdziwe innych osób, co obniżyło dokładność z~76,83\% do 65,36\% \cite{dey2017}.
+
+\subsection{Uczenie na skróty}
+\label{Subsec:skroty}
+
+Głębokie sieci neuronowe często osiągają bardzo dobre wyniki na zbiorze testowym, mimo że nie nauczyły się zamierzonego zadania.
+Zjawisko to nazwano uczeniem na skróty (ang. \textit{shortcut learning}), a~skrót zdefiniowano jako regułę decyzyjną, która działa dobrze na standardowych zbiorach testowych, ale zawodzi w~trudniejszych warunkach, na przykład w~rzeczywistym zastosowaniu \cite{geirhos2020}.
+Przykładem jest sieć rozpoznająca krowy, która myliła się, gdy krowa stała w~nietypowym otoczeniu, ponieważ zamiast zwierzęcia rozpoznawała trawę w~tle.
+Innym przykładem jest sieć wykrywająca zapalenie płuc na zdjęciach rentgenowskich, która zamiast płuc rozpoznawała znacznik charakterystyczny dla szpitala, w~którym wykonano zdjęcie, i~zawodziła na zdjęciach z~nowych szpitali \cite{geirhos2020}.
+
+Skróty biorą się z~systematycznych zależności w~danych, na przykład między obiektem a~tłem, nazywanych obciążeniem zbioru danych (ang. \textit{dataset bias}) \cite{geirhos2020}.
+Sieć wykorzystuje dowolną cechę, która wystarcza do rozróżnienia klas w~danym zbiorze, a~na to, której cechy się nauczy, wpływają także budowa sieci, funkcja straty i~sposób optymalizacji \cite{geirhos2020}.
+Ponieważ zbiór testowy zwykle pochodzi z~tego samego źródła co treningowy, skrót daje dobre wyniki również na teście i~łatwo go przeoczyć.
+Autorzy pracy \cite{geirhos2020} zalecają ostrożną interpretację wyników oraz sprawdzanie, czy prosta metoda, która nie korzysta z~zamierzonych cech, nie osiąga zaskakująco dobrego wyniku.
+
+W~zbiorach podpisów podpisy prawdziwe i~fałszerstwa zbiera się w~różny sposób: osoby składają swoje podpisy w~jednej lub kilku sesjach, a~fałszerstwa powstają w~osobnym procesie, w~którym inne osoby naśladują pokazane im podpisy \cite{hafemann2017review}.
+Różnice wynikające ze sposobu zbierania danych, na przykład w~rodzaju długopisu czy warunkach skanowania, mogą więc stać się dla sieci skrótem pozwalającym odróżnić fałszerstwa bez analizy kształtu podpisu.
+Takie różnice znaleziono w~zbiorze CEDAR w~ramach niniejszej pracy, a~ich wpływ na wyniki zbadano w~rozdziale~\ref{Sec:wyniki}.
 
 
 \section{Zbiór danych i jego przygotowanie}
@@ -214,11 +410,7 @@ Wynik ten posłuży również jako punkt odniesienia przy ocenie sieci w~rozdzia
 \subsection{Podział na zbiory niezależne od autora}
 \label{Subsec:podzial}
 
-W~weryfikacji podpisu wyróżnia się dwa podejścia.
-W~podejściu zależnym od autora (ang. \textit{writer-dependent}) dla każdej osoby trenuje się osobny model, natomiast w~podejściu niezależnym od autora (ang. \textit{writer-independent}) jeden model służy do weryfikacji podpisów dowolnych osób \cite{hafemann2017review}.
-W~drugim przypadku osoby dzieli się na rozłączne zbiory treningowy i~testowy, dzięki czemu system nie wymaga ponownego trenowania po dodaniu nowej osoby \cite{dey2017}.
-
-W~niniejszej pracy zastosowano podejście niezależne od autora.
+W~niniejszej pracy zastosowano podejście niezależne od autora, opisane w~podrozdziale~\ref{Subsec:weryfikacja}, w~którym do treningu i~testu używa się rozłącznych grup osób.
 Osoby ze zbioru CEDAR podzielono losowo na trzy rozłączne grupy: 35 osób do zbioru treningowego, 10 do walidacyjnego i~10 do testowego.
 Liczbę podpisów w~każdym ze zbiorów przedstawiono w~tabeli \ref{Tab:podzial}.
 
@@ -495,19 +687,11 @@ Na końcu przedstawiono ocenę końcowego modelu walidacją krzyżową oraz por�
 
 \subsubsection*{Miary oceny}
 
-Dla każdej pary podpisów sieć zwraca odległość $D$ ze wzoru (\ref{Eq:odleglosc}).
-Para jest uznawana za parę podpisów tej samej osoby, gdy odległość nie przekracza progu decyzyjnego $t$.
-System może popełnić dwa rodzaje błędów: zaakceptować parę negatywną albo odrzucić parę pozytywną.
-Opisują je współczynnik błędnych akceptacji FAR (ang. \textit{false acceptance rate}) i~współczynnik błędnych odrzuceń FRR (ang. \textit{false rejection rate}) \cite{hafemann2017review}:
-\begin{equation}
-	\mathrm{FAR}(t) = \frac{N_{\mathrm{FA}}(t)}{N_{\mathrm{neg}}}, \qquad
-	\mathrm{FRR}(t) = \frac{N_{\mathrm{FR}}(t)}{N_{\mathrm{poz}}},
-	\label{Eq:far_frr}
-\end{equation}
-gdzie $N_{\mathrm{FA}}(t)$ oznacza liczbę par negatywnych błędnie zaakceptowanych przy progu $t$, $N_{\mathrm{FR}}(t)$ liczbę par pozytywnych błędnie odrzuconych, a~$N_{\mathrm{neg}}$ i~$N_{\mathrm{poz}}$ liczbę wszystkich par negatywnych i~pozytywnych.
-Zwiększenie progu zmniejsza FRR, ale zwiększa FAR, dlatego oba współczynniki zawsze podaje się razem.
+Do oceny użyto miar opisanych w~podrozdziale~\ref{Subsec:miary}.
+Dla każdej pary podpisów sieć zwraca odległość $D$ ze wzoru (\ref{Eq:odleglosc}), a~para jest uznawana za parę podpisów tej samej osoby, gdy odległość nie przekracza progu decyzyjnego $t$.
+Współczynniki FAR i~FRR obliczano ze wzoru (\ref{Eq:far_frr}).
 
-Główną miarą użytą w~pracy jest równy współczynnik błędów EER, czyli wartość, przy której FAR i~FRR są sobie równe \cite{hafemann2017review}.
+Główną miarą użytą w~pracy jest równy współczynnik błędów EER.
 W~implementacji sprawdzane są kolejno wszystkie progi równe odległościom występującym w~danych, wybierany jest ten, dla którego różnica między FAR a~FRR jest najmniejsza, a~jako EER podawana jest średnia obu współczynników.
 EER nie zależy od wybranego wcześniej progu, dlatego nadaje się do porównywania wariantów modelu.
 Dodatkowo podawane są FAR i~FRR przy progu wyznaczonym na zbiorze walidacyjnym (podrozdział~\ref{Subsec:trening}), które pokazują, jak system działa, gdy próg trzeba ustalić przed oceną.
@@ -647,9 +831,8 @@ Oznacza to, że sieć nauczyła się porównywać przede wszystkim jasność tł
 Para z~fałszerstwem wykwalifikowanym zawsze zawiera jeden obraz z~ciemniejszym tłem i~jeden z~jaśniejszym, więc łatwo ją odrzucić, natomiast para dwóch podpisów prawdziwych różnych osób ma podobne tło i~często jest błędnie akceptowana.
 Model wydaje się więc bardzo dobry na fałszerstwach wykwalifikowanych, ale gorzej rozpoznaje, czy dwa podpisy należą do tej samej osoby.
 
-Takie zachowanie nazywa się w~literaturze uczeniem na skróty (ang. \textit{shortcut learning}).
-Sieć znajduje prostą regułę, która działa na danym zbiorze testowym, ale nie odpowiada rzeczywistemu zadaniu i~zawodzi w~innych warunkach \cite{geirhos2020}.
-W~tym przypadku regułą jest różnica jasności tła wynikająca ze sposobu przygotowania zbioru, a~nie z~kształtu podpisu.
+Jest to przykład uczenia na skróty, opisanego w~podrozdziale~\ref{Subsec:skroty} \cite{geirhos2020}.
+Regułą pozwalającą odróżnić fałszerstwa jest tu różnica jasności tła wynikająca ze sposobu przygotowania zbioru, a~nie kształt podpisu.
 Wynik ten pokazuje, że usunięcie tła jest konieczne, a~bardzo małe błędy uzyskiwane na zbiorze CEDAR mogą wynikać z~takiej różnicy, a~nie z~rozpoznawania podpisów.
 
 \subsubsection*{Ciemność atramentu}
@@ -661,13 +844,14 @@ Wyrównanie atramentu pozostawiono, ponieważ nie pogarsza wyniku dla fałszerst
 
 \subsubsection*{Trening bez fałszerstw wykwalifikowanych}
 
-W~rzeczywistym zastosowaniu fałszerstwa podpisu nowej osoby zwykle nie są dostępne.
+W~rzeczywistym zastosowaniu fałszerstwa podpisu nowej osoby zwykle nie są dostępne \cite{hafemann2017review}.
 Dlatego sprawdzono, jak działa sieć trenowana bez fałszerstw wykwalifikowanych.
 Dla każdej osoby treningowej losowano 48 par pozytywnych i~48 par z~fałszerstwami losowymi, tak aby klasy pozostały równoliczne.
 W~pierwszym wariancie fałszerstwa wykwalifikowane były używane tylko na zbiorze walidacyjnym do wyboru epoki i~progu, a~w~drugim nie były używane wcale.
 
 Bez fałszerstw w~treningu EER dla fałszerstw wykwalifikowanych wzrósł z~20,3\% do 26,4\%, a~gdy nie używano ich także na walidacji, do 27,8\%.
 Pogorszenie wystąpiło przy każdym ziarnie.
+Podobny spadek zaobserwowano w~pracy \cite{dey2017} na zbiorze GPDS300 (podrozdział~\ref{Subsec:syjamskie}).
 Fałszerstwa w~treningu poprawiają więc wynik o~około 6 punktów procentowych, przy czym nie wiadomo, czy sieć uczy się z~nich cech fałszowania, czy pozostałych różnic wynikających ze sposobu zbierania danych, takich jak grubość kresek.
 Nawet bez fałszerstw sieć była jednak wyraźnie lepsza od prostej metody porównawczej, dla której EER przy przycinaniu wynosił 42,1\%, więc uczy się przede wszystkim kształtu podpisu.
 Dla fałszerstw losowych wynik był lepszy niż przy pełnym treningu (9,2\% wobec 11,1\%), ponieważ par z~fałszerstwami losowymi było w~treningu dwa razy więcej.
@@ -767,17 +951,17 @@ Wynik walidacji krzyżowej nie jest więc całkowicie niezależny od wyboru usta
 \subsection{Porównanie z~wynikami z~literatury}
 \label{Subsec:porownanie}
 
-Uzyskany wynik jest wyraźnie gorszy od wyników podawanych dla zbioru CEDAR w~literaturze.
-Sieć SigNet, oparta tak jak w~niniejszej pracy na sieci syjamskiej i~funkcji straty kontrastowej, uzyskała na tym zbiorze dokładność 100\% przy FAR i~FRR równych zero \cite{dey2017}.
+Uzyskany wynik jest wyraźnie gorszy od wyników podawanych dla zbioru CEDAR w~literaturze (podrozdziały~\ref{Subsec:metody} i~\ref{Subsec:syjamskie}).
+Sieć SigNet, oparta tak jak w~niniejszej pracy na splotowej sieci syjamskiej i~funkcji straty kontrastowej, uzyskała na tym zbiorze dokładność 100\% przy FAR i~FRR równych zero \cite{dey2017}.
 Wynik ten otrzymano jednak w~innych warunkach.
 Zbiór testowy zawierał 5 osób z~jednego losowego podziału, a~dokładność obliczano jako najlepszą wartość spośród wszystkich progów sprawdzonych na zbiorze testowym, czyli próg był dobierany na tych samych danych, na których oceniano model \cite{dey2017}.
 W~opisie przygotowania obrazów nie wspomniano o~usuwaniu tła.
 Jak pokazano w~podrozdziale~\ref{Subsec:wycieki}, bez usuwania tła sieć opisana w~niniejszej pracy osiągnęła EER równy 1,8\%, więc prawie bezbłędny wynik może być skutkiem różnicy jasności tła.
 Bez powtórzenia badań z~pracy \cite{dey2017} nie da się jednak tego potwierdzić.
 
-W~pracy \cite{hafemann2017features} na zbiorze CEDAR uzyskano EER równy 4,63\%.
-Zastosowano tam podejście zależne od autora: dla każdej osoby trenowano osobny klasyfikator na podstawie 12 jej podpisów wzorcowych, korzystając z~cech wyznaczonych przez sieć splotową.
+Najlepszy wynik w~tabeli~\ref{Tab:cedar_literatura}, EER równy 4,63\% \cite{hafemann2017features}, uzyskano w~podejściu zależnym od autora, w~którym dla każdej osoby trenowano osobny klasyfikator na podstawie 12 jej podpisów wzorcowych.
 Model miał więc do dyspozycji podpisy osoby, którą weryfikował, podczas gdy sieć z~niniejszej pracy porównuje dwa podpisy osoby, której nigdy nie widziała.
+Pozostałe wyniki w~tej tabeli to w~większości średni błąd AER, a~nie EER, uzyskany przy różnej liczbie podpisów wzorcowych.
 
 Wyniki z~literatury nie są więc bezpośrednio porównywalne z~wynikiem niniejszej pracy.
 W~pracy zastosowano surowszy sposób oceny: osoby testowe nie występowały w~treningu, próg nie był dobierany na zbiorze testowym, wynik uśredniono z~15 treningów obejmujących wszystkie 55 osób, a~różnicę jasności tła usunięto przed treningiem.
@@ -803,16 +987,19 @@ W~pracy zastosowano surowszy sposób oceny: osoby testowe nie występowały w~tr
 \bibitem{hafemann2017review} Hafemann L.G., Sabourin R., Oliveira L.S.: Offline Handwritten Signature Verification --- Literature Review. 7th International Conference on Image Processing Theory, Tools and Applications (IPTA), 2017.
 \bibitem{bromley1993} Bromley J., Guyon I., LeCun Y., Säckinger E., Shah R.: Signature Verification using a ,,Siamese'' Time Delay Neural Network. Advances in Neural Information Processing Systems 6 (NIPS 1993), str. 737--744.
 \bibitem{dey2017} Dey S., Dutta A., Toledo J.I., Ghosh S.K., Lladós J., Pal U.: SigNet: Convolutional Siamese Network for Writer Independent Offline Signature Verification. arXiv:1707.02131, 2017.
+\bibitem{jain2004} Jain A.K., Ross A., Prabhakar S.: An Introduction to Biometric Recognition. IEEE Transactions on Circuits and Systems for Video Technology, vol.~14, nr~1, 2004, str.~4--20.
 \bibitem{kalera2004} Kalera M.K., Srihari S.N., Xu A.: Offline Signature Verification and Identification Using Distance Statistics. International Journal of Pattern Recognition and Artificial Intelligence, vol.~18, nr~7, 2004, str. 1339--1360.
 \bibitem{hafemann2017features} Hafemann L.G., Sabourin R., Oliveira L.S.: Learning Features for Offline Handwritten Signature Verification using Deep Convolutional Neural Networks. Pattern Recognition, vol.~70, 2017, str. 163--176.
+\bibitem{goodfellow2016} Goodfellow I., Bengio Y., Courville A.: Deep Learning. MIT Press, 2016, \url{https://www.deeplearningbook.org}. Dostęp 12.10.2026.
+\bibitem{hadsell2006} Hadsell R., Chopra S., LeCun Y.: Dimensionality Reduction by Learning an Invariant Mapping. IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2006, str.~1735--1742.
+\bibitem{shorten2019} Shorten C., Khoshgoftaar T.M.: A survey on Image Data Augmentation for Deep Learning. Journal of Big Data, vol.~6, nr~60, 2019.
+\bibitem{li2022} Li Y., Chen C.L.P., Zhang T.: A Survey on Siamese Network: Methodologies, Applications, and Opportunities. IEEE Transactions on Artificial Intelligence, vol.~3, nr~6, 2022, str.~994--1014.
+\bibitem{geirhos2020} Geirhos R., Jacobsen J.-H., Michaelis C., Zemel R., Brendel W., Bethge M., Wichmann F.A.: Shortcut Learning in Deep Neural Networks. Nature Machine Intelligence, vol.~2, nr~11, 2020, str.~665--673.
 \bibitem{cedarkaggle} CEDAR Signature Dataset, \url{https://www.kaggle.com/datasets/shreelakshmigp/cedardataset}. Dostęp 29.09.2026.
 \bibitem{otsu1979} Otsu N.: A Threshold Selection Method from Gray-Level Histograms. IEEE Transactions on Systems, Man, and Cybernetics, vol.~SMC-9, nr~1, 1979, str.~62--66.
 \bibitem{ioffe2015} Ioffe S., Szegedy C.: Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift. Proceedings of the 32nd International Conference on Machine Learning (ICML), PMLR vol.~37, 2015, str.~448--456.
 \bibitem{srivastava2014} Srivastava N., Hinton G., Krizhevsky A., Sutskever I., Salakhutdinov R.: Dropout: A Simple Way to Prevent Neural Networks from Overfitting. Journal of Machine Learning Research, vol.~15, 2014, str.~1929--1958.
-\bibitem{hadsell2006} Hadsell R., Chopra S., LeCun Y.: Dimensionality Reduction by Learning an Invariant Mapping. IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2006, str.~1735--1742.
 \bibitem{kingma2015} Kingma D.P., Ba J.: Adam: A Method for Stochastic Optimization. International Conference on Learning Representations (ICLR), 2015.
-\bibitem{shorten2019} Shorten C., Khoshgoftaar T.M.: A survey on Image Data Augmentation for Deep Learning. Journal of Big Data, vol.~6, nr~60, 2019.
-\bibitem{geirhos2020} Geirhos R., Jacobsen J.-H., Michaelis C., Zemel R., Brendel W., Bethge M., Wichmann F.A.: Shortcut Learning in Deep Neural Networks. Nature Machine Intelligence, vol.~2, nr~11, 2020, str.~665--673.
 
 \end{thebibliography}
 
