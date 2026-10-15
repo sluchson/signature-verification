@@ -337,3 +337,21 @@ Wpisy z sierpnia dopisane później, daty przybliżone.
 - DEFAULTS w train.py zostaje 30 (zgodność ze starymi komórkami), dalsze treningi z `epochs=50` jawnie
 - do zrobienia: poprawić opis liczby epok w rozdz. 4.3
 - notebook `04_eksperymenty.ipynb`
+
+## Październik 2026 — Eksperyment: zmniejszanie learning rate (cosinus)
+
+- po co: przy stałym lr val EER skakał pod koniec treningu o kilka pkt, więc wybór najlepszej epoki był częściowo przypadkowy
+- jak: `lr_schedule="cosine"` w `train.py` (CosineAnnealingLR, T_max = liczba epok), lr od 0,001 do prawie 0 w 50. epoce; ta sama walidacja krzyżowa, 5 części x 3 seedy, nazwy cv50cos_fold0–4, historia w results/cv50cos_historia.json
+- domyślnie `lr_schedule=None`, więc stare treningi bez zmian (sprawdzone na krótkim treningu)
+- przewidywanie: najlepsze epoki 40–50, mniejsze skoki val EER, test trochę lepszy (18,5–19,5% wykwalifikowane)
+- wynik (stały lr → cosinus):
+  - val EER 10,7 ± 1,5 → 11,9 ± 1,6 (lepiej w 3, gorzej w 12)
+  - EER wykwalifikowane 19,4 ± 3,5 → 19,6 ± 2,8 (lepiej w 8, gorzej w 7)
+  - EER losowe 12,0 ± 1,8 → 13,3 ± 3,1 (lepiej w 6, gorzej w 8; głównie część 1: 19,3 / 15,9 / 20,1)
+  - średni skok val EER między epokami 41–50: 1,6 → 0,4 pkt
+  - rozrzut seedów w części: 1,9 → 1,7 pkt
+- krzywa gładsza (przewidywanie się sprawdziło), ale najlepsze epoki głównie 21–40, nie 40–50, a test bez poprawy (przewidywanie się nie sprawdziło)
+- val EER wyższy, bo przy gładkiej krzywej rzadziej trafia się przypadkowo niska walidacja; przy stałym lr val EER jest więc trochę zaniżony przez wybór epoki
+- decyzja: model końcowy ze stałym lr, główny wynik bez zmian (19,4 ± 3,5 / 12,0 ± 1,8)
+- trening przerwany 2 razy, dokończony dzięki pomijaniu gotowych treningów; łącznie ok. 4 h
+- notebook `04_eksperymenty.ipynb`

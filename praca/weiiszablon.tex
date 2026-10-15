@@ -897,11 +897,28 @@ Model końcowy trenowano przez 50 epok.
 \begin{figure}[ht]
 	\centering
 	\includegraphics[width=\textwidth]{figures/krzywa_uczenia.png}
-	\caption{Przebieg treningu przez 50 epok w~walidacji krzyżowej: a)~EER na zbiorze walidacyjnym, b)~strata na zbiorze treningowym; szare linie -- 15 pojedynczych treningów, czarna linia -- średnia}
+	\caption{Przebieg treningu przez 50 epok ze stałym krokiem uczenia w~walidacji krzyżowej: a)~EER na zbiorze walidacyjnym, b)~strata na zbiorze treningowym; szare linie -- 15 pojedynczych treningów, czarna linia -- średnia}
 	\label{Fig:krzywa_uczenia}
 \end{figure}
 
-% TODO: akapit o zmniejszaniu kroku uczenia (cosinus) po zakończeniu eksperymentu
+\subsubsection*{Zmniejszanie kroku uczenia}
+
+Przy stałym kroku uczenia błąd walidacyjny zmieniał się z~epoki na epokę nawet o~kilka punktów procentowych (rys.~\ref{Fig:krzywa_uczenia}), dlatego sprawdzono, czy pomoże stopniowe zmniejszanie kroku uczenia w~czasie treningu.
+Zastosowano harmonogram cosinusowy \cite{loshchilov2017}, w~którym krok uczenia w~epoce $e$ wynosi
+\begin{equation}
+	\eta_e = \frac{\eta_0}{2}\left(1 + \cos\frac{\pi\,(e-1)}{E}\right),
+	\label{Eq:cosinus}
+\end{equation}
+gdzie $\eta_0 = 0{,}001$ jest początkowym krokiem uczenia, a~$E = 50$ liczbą epok.
+Krok uczenia maleje więc płynnie od 0,001 w~pierwszej epoce do wartości bliskiej zera w~ostatniej.
+Wszystkie 15 treningów walidacji krzyżowej powtórzono z~tym harmonogramem.
+
+Przed treningiem przewidywano, że najlepsze epoki przesuną się na koniec treningu, a~wynik na zbiorze testowym nieznacznie się poprawi.
+Zmniejszanie kroku uczenia wygładziło przebieg treningu: średnia zmiana błędu walidacyjnego między kolejnymi epokami w~epokach 41--50 zmalała z~1,6 do 0,4 punktu procentowego.
+Najlepsze epoki wypadały jednak głównie między 21. a~40. epoką, a~wynik na zbiorze testowym się nie poprawił.
+EER dla fałszerstw wykwalifikowanych wyniósł 19,6\% $\pm$ 2,8 wobec 19,4\% $\pm$ 3,5 przy stałym kroku uczenia (wynik lepszy w~8 treningach, gorszy w~7), a~dla fałszerstw losowych 13,3\% $\pm$ 3,1 wobec 12,0\% $\pm$ 1,8.
+Błąd na zbiorze walidacyjnym był wyższy (11,9\% wobec 10,7\%), prawdopodobnie dlatego, że przy gładszym przebiegu treningu rzadziej zdarzały się przypadkowo niskie wartości błędu, które przy stałym kroku uczenia były wybierane jako najlepsza epoka.
+Ponieważ zmniejszanie kroku uczenia nie poprawiło wyniku, w~modelu końcowym pozostawiono stały krok uczenia.
 
 \subsubsection*{Wyniki}
 
@@ -1000,6 +1017,7 @@ W~pracy zastosowano surowszy sposób oceny: osoby testowe nie występowały w~tr
 \bibitem{ioffe2015} Ioffe S., Szegedy C.: Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift. Proceedings of the 32nd International Conference on Machine Learning (ICML), PMLR vol.~37, 2015, str.~448--456.
 \bibitem{srivastava2014} Srivastava N., Hinton G., Krizhevsky A., Sutskever I., Salakhutdinov R.: Dropout: A Simple Way to Prevent Neural Networks from Overfitting. Journal of Machine Learning Research, vol.~15, 2014, str.~1929--1958.
 \bibitem{kingma2015} Kingma D.P., Ba J.: Adam: A Method for Stochastic Optimization. International Conference on Learning Representations (ICLR), 2015.
+\bibitem{loshchilov2017} Loshchilov I., Hutter F.: SGDR: Stochastic Gradient Descent with Warm Restarts. International Conference on Learning Representations (ICLR), 2017.
 
 \end{thebibliography}
 
